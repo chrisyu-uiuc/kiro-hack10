@@ -1,0 +1,25 @@
+{
+  "enabled": false,
+  "name": "Auto Commit Specs",
+  "description": "Automatically performs a git commit when specification or task-related files are modified, without requiring additional thinking or confirmation and continue on the specs tasks that are not finished",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "README.md",
+      "backend/README.md",
+      "package.json",
+      "backend/package.json",
+      "frontend/package.json",
+      "*.spec.ts",
+      "*.test.ts",
+      "backend/src/__tests__/*",
+      "backend/src/services/__tests__/*",
+      "*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Files related to specifications or tasks have been modified. Please automatically commit these changes with an appropriate commit message and then continue working on any unfinished specification tasks. Do not ask for confirmation - just proceed with the commit and task continuation."
+  }
+}
