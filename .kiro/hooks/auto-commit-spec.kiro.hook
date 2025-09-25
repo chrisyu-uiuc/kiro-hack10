@@ -4,7 +4,7 @@
   "description": "Automatically performs a git commit when specification or task-related files are modified, without requiring additional thinking or confirmation",
   "version": "1",
   "when": {
-    "type": "fileEdited",
+    "type": "userTriggered",
     "patterns": [
       "README.md",
       "package.json",

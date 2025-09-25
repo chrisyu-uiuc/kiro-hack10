@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-agent-runtime": "^3.454.0",
@@ -25,6 +27,8 @@
     "@typescript-eslint/parser": "^6.10.0",
     "eslint": "^8.53.0",
     "tsx": "^4.1.4",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^1.0.0",
+    "@types/jest": "^29.5.8"
   }
 }
