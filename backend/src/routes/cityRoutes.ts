@@ -3,59 +3,34 @@ import { BedrockAgentService } from '../services/BedrockAgentService.js';
 import { sessionStorage } from '../middleware/sessionStorage.js';
 
 
-import expressValidator from 'express-validator';
-const { body, validationResult } = expressValidator;
-
 const router = Router();
 const bedrockService = new BedrockAgentService();
 
-// Validation middleware for city verification
-const validateCityInput = [
-  body('city')
-    .isString()
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('City name must be a non-empty string with maximum 100 characters')
-    .matches(/^[a-zA-Z0-9\s\-'.,]+$/)
-    .withMessage('City name can only contain letters, numbers, spaces, hyphens, apostrophes, commas, and periods'),
-];
+// Simple validation functions
+const validateCityInput = (city: string): string | null => {
+  if (!city || typeof city !== 'string') return 'City name is required';
+  if (city.trim().length === 0) return 'City name cannot be empty';
+  if (city.length > 100) return 'City name must be less than 100 characters';
+  if (!/^[a-zA-Z0-9\s\-'.,]+$/.test(city)) return 'City name contains invalid characters';
+  return null;
+};
 
-const validateSpotGenerationInput = [
-  body('city')
-    .isString()
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('City name must be a non-empty string with maximum 100 characters'),
-  body('sessionId')
-    .isString()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Session ID is required'),
-];
+const validateSessionId = (sessionId: string): string | null => {
+  if (!sessionId || typeof sessionId !== 'string') return 'Session ID is required';
+  if (sessionId.trim().length === 0) return 'Session ID cannot be empty';
+  return null;
+};
 
-const validateSpotSelectionInput = [
-  body('selectedSpots')
-    .isArray({ min: 1 })
-    .withMessage('Selected spots must be a non-empty array'),
-  body('selectedSpots.*')
-    .isString()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Each selected spot ID must be a non-empty string'),
-  body('sessionId')
-    .isString()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Session ID is required'),
-];
-
-const validateItineraryGenerationInput = [
-  body('sessionId')
-    .isString()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Session ID is required'),
-];
+const validateSelectedSpots = (selectedSpots: any): string | null => {
+  if (!Array.isArray(selectedSpots)) return 'Selected spots must be an array';
+  if (selectedSpots.length === 0) return 'At least one spot must be selected';
+  for (const spot of selectedSpots) {
+    if (!spot || typeof spot !== 'string' || spot.trim().length === 0) {
+      return 'All selected spots must be valid strings';
+    }
+  }
+  return null;
+};
 
 /**
  * POST /api/verify-city
