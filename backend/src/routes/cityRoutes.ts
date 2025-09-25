@@ -2,8 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { BedrockAgentService } from '../services/BedrockAgentService.js';
 import { sessionStorage } from '../middleware/sessionStorage.js';
 
-import pkg from 'express-validator';
-const { body, validationResult } = pkg;
+import { body, validationResult } from 'express-validator';
 
 const router = Router();
 const bedrockService = new BedrockAgentService();

@@ -5,14 +5,22 @@ import app from '../server.js';
 describe('Server Foundation', () => {
   let server: any;
 
-  beforeAll(() => {
-    // Start server on a different port for testing
-    server = app.listen(0);
+  beforeAll(async () => {
+    // Start server on a random available port for testing
+    return new Promise((resolve) => {
+      server = app.listen(0, () => {
+        resolve(undefined);
+      });
+    });
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     if (server) {
-      server.close();
+      return new Promise((resolve) => {
+        server.close(() => {
+          resolve(undefined);
+        });
+      });
     }
   });
 

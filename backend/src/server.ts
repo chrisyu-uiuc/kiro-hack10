@@ -67,24 +67,27 @@ app.use('*', (req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-const server = app.listen(config.port, () => {
-  console.log(`🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`);
-  console.log(`📍 Health check available at http://localhost:${config.port}/health`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  const server = app.listen(config.port, () => {
+    console.log(`🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`);
+    console.log(`📍 Health check available at http://localhost:${config.port}/health`);
   });
-});
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    console.log('Process terminated');
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+      console.log('Process terminated');
+    });
   });
-});
+
+  process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully');
+    server.close(() => {
+      console.log('Process terminated');
+    });
+  });
+}
 
 export default app;

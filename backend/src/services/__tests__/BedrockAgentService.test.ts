@@ -266,7 +266,7 @@ describe('BedrockAgentService', () => {
       });
     });
 
-    it('should handle invalid JSON response', async () => {
+    it('should handle invalid JSON response with fallback', async () => {
       const mockResponse = {
         completion: {
           async *[Symbol.asyncIterator]() {
@@ -281,8 +281,17 @@ describe('BedrockAgentService', () => {
 
       mockSend.mockResolvedValue(mockResponse);
 
-      await expect(service.generateSpots('Paris', 'test-session'))
-        .rejects.toThrow('Failed to parse spots data from agent response');
+      const result = await service.generateSpots('Paris', 'test-session');
+      
+      // Should return fallback spots instead of throwing
+      expect(result).toHaveLength(5);
+      expect(result[0]).toEqual({
+        id: 'spot-1',
+        name: 'Paris Central Park',
+        category: 'Park',
+        location: 'City Center',
+        description: 'A beautiful central park in the heart of Paris, perfect for relaxation and outdoor activities.',
+      });
     });
   });
 
@@ -390,7 +399,7 @@ describe('BedrockAgentService', () => {
       });
     });
 
-    it('should handle invalid JSON response', async () => {
+    it('should handle invalid JSON response with fallback', async () => {
       const mockResponse = {
         completion: {
           async *[Symbol.asyncIterator]() {
@@ -405,8 +414,13 @@ describe('BedrockAgentService', () => {
 
       mockSend.mockResolvedValue(mockResponse);
 
-      await expect(service.generateItinerary(mockSpots, 'test-session'))
-        .rejects.toThrow('Failed to parse itinerary data from agent response');
+      const result = await service.generateItinerary(mockSpots, 'test-session');
+      
+      // Should return fallback itinerary instead of throwing
+      expect(result.title).toBe('Your Custom Travel Itinerary');
+      expect(result.totalDuration).toBe('4 hours');
+      expect(result.schedule).toHaveLength(2);
+      expect(result.schedule[0].spot).toBe('Eiffel Tower');
     });
   });
 });
