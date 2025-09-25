@@ -42,7 +42,7 @@
   - Write unit tests for selection storage and retrieval
   - _Requirements: 4.1, 4.2_
 
-- [ ] 7. Implement itinerary generation API endpoint
+- [x] 7. Implement itinerary generation API endpoint
   - Create POST /api/generate-itinerary endpoint using stored selections
   - Use BedrockAgentService to generate comprehensive travel plan with timing and transportation
   - Parse agent response into structured itinerary format with schedule items

@@ -5,6 +5,7 @@ import express from 'express';
 // Create mocks that we can control
 const mockVerifyCityExists = vi.fn();
 const mockGenerateSpots = vi.fn();
+const mockGenerateItinerary = vi.fn();
 
 // Mock the BedrockAgentService module
 vi.mock('../../services/BedrockAgentService.js', () => {
@@ -13,6 +14,7 @@ vi.mock('../../services/BedrockAgentService.js', () => {
       return {
         verifyCityExists: mockVerifyCityExists,
         generateSpots: mockGenerateSpots,
+        generateItinerary: mockGenerateItinerary,
       };
     }),
   };
@@ -901,6 +903,363 @@ describe('POST /api/verify-city', () => {
         expect(response.body.data.selectedSpots[0]).toHaveProperty('category');
         expect(response.body.data.selectedSpots[0]).toHaveProperty('location');
         expect(response.body.data.selectedSpots[0]).toHaveProperty('description');
+      });
+    });
+  });
+
+  describe('POST /api/generate-itinerary', () => {
+    const mockSpots = [
+      {
+        id: 'spot-1',
+        name: 'Eiffel Tower',
+        category: 'Landmark',
+        location: 'Champ de Mars',
+        description: 'Iconic iron tower in Paris',
+      },
+      {
+        id: 'spot-2',
+        name: 'Louvre Museum',
+        category: 'Museum',
+        location: '1st Arrondissement',
+        description: 'World famous art museum',
+      },
+    ];
+
+    const mockItinerary = {
+      title: 'Paris Adventure',
+      totalDuration: '1 day',
+      schedule: [
+        {
+          time: '9:00 AM',
+          spot: 'Eiffel Tower',
+          duration: '2 hours',
+          transportation: 'Metro',
+          notes: 'Best views in the morning',
+        },
+        {
+          time: '2:00 PM',
+          spot: 'Louvre Museum',
+          duration: '3 hours',
+          transportation: 'Walking',
+          notes: 'Book tickets in advance',
+        },
+      ],
+    };
+
+    beforeEach(() => {
+      // Set up session with selected spots
+      mockSessionStorage.getSession.mockReturnValue({
+        sessionId: 'test-session',
+        city: 'Paris',
+        allSpots: mockSpots,
+        selectedSpots: mockSpots,
+        itinerary: null,
+        createdAt: new Date(),
+        lastAccessedAt: new Date(),
+      });
+    });
+
+    describe('Successful itinerary generation', () => {
+      it('should generate itinerary for selected spots successfully', async () => {
+        // Arrange
+        mockGenerateItinerary.mockResolvedValue(mockItinerary);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body).toMatchObject({
+          success: true,
+          data: {
+            sessionId: 'test-session',
+            city: 'Paris',
+            itinerary: mockItinerary,
+            spotsCount: 2,
+            message: 'Successfully generated itinerary for 2 spots in Paris',
+          },
+        });
+        expect(response.body.timestamp).toBeDefined();
+        expect(mockGenerateItinerary).toHaveBeenCalledWith(mockSpots, 'test-session');
+        expect(mockSessionStorage.updateSession).toHaveBeenCalledWith('test-session', { itinerary: mockItinerary });
+      });
+
+      it('should handle single spot itinerary generation', async () => {
+        // Arrange
+        const singleSpot = [mockSpots[0]];
+        mockSessionStorage.getSession.mockReturnValue({
+          sessionId: 'test-session',
+          city: 'Paris',
+          allSpots: mockSpots,
+          selectedSpots: singleSpot,
+          itinerary: null,
+          createdAt: new Date(),
+          lastAccessedAt: new Date(),
+        });
+        mockGenerateItinerary.mockResolvedValue(mockItinerary);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body.data.spotsCount).toBe(1);
+        expect(response.body.data.message).toBe('Successfully generated itinerary for 1 spots in Paris');
+        expect(mockGenerateItinerary).toHaveBeenCalledWith(singleSpot, 'test-session');
+      });
+    });
+
+    describe('Input validation', () => {
+      it('should return validation error for missing sessionId field', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({});
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid input provided',
+          },
+        });
+        expect(response.body.error.details).toBeDefined();
+      });
+
+      it('should return validation error for empty sessionId', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: '' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('should return validation error for non-string sessionId', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 123 });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+    });
+
+    describe('Session validation', () => {
+      it('should return error when session not found', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockReturnValue(null);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'non-existent-session' });
+
+        // Assert
+        expect(response.status).toBe(404);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'SESSION_NOT_FOUND',
+            message: 'Session not found. Please start over.',
+          },
+        });
+      });
+
+      it('should return error when no spots are selected', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockReturnValue({
+          sessionId: 'test-session',
+          city: 'Paris',
+          allSpots: mockSpots,
+          selectedSpots: [],
+          itinerary: null,
+          createdAt: new Date(),
+          lastAccessedAt: new Date(),
+        });
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'NO_SPOTS_SELECTED',
+            message: 'No spots have been selected. Please select spots first.',
+          },
+        });
+      });
+
+      it('should return error when selectedSpots is null', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockReturnValue({
+          sessionId: 'test-session',
+          city: 'Paris',
+          allSpots: mockSpots,
+          selectedSpots: null,
+          itinerary: null,
+          createdAt: new Date(),
+          lastAccessedAt: new Date(),
+        });
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('NO_SPOTS_SELECTED');
+      });
+    });
+
+    describe('Error handling', () => {
+      it('should handle BedrockAgentService errors gracefully', async () => {
+        // Arrange
+        mockGenerateItinerary.mockRejectedValue(new Error('AWS service unavailable'));
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'ITINERARY_GENERATION_ERROR',
+            message: 'Failed to generate itinerary. Please try again later.',
+          },
+        });
+      });
+
+      it('should handle session update failure', async () => {
+        // Arrange
+        mockGenerateItinerary.mockResolvedValue(mockItinerary);
+        mockSessionStorage.updateSession.mockReturnValue(false);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'SESSION_UPDATE_ERROR',
+            message: 'Failed to store itinerary',
+          },
+        });
+      });
+
+      it('should handle network timeout errors', async () => {
+        // Arrange
+        mockGenerateItinerary.mockRejectedValue(new Error('Request timeout'));
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body.error.code).toBe('ITINERARY_GENERATION_ERROR');
+      });
+
+      it('should handle unexpected errors gracefully', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockImplementation(() => {
+          throw new Error('Unexpected error');
+        });
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'ITINERARY_GENERATION_ERROR',
+            message: 'Failed to generate itinerary. Please try again later.',
+          },
+        });
+      });
+    });
+
+    describe('Response format', () => {
+      it('should include timestamp in all responses', async () => {
+        // Arrange
+        mockGenerateItinerary.mockResolvedValue(mockItinerary);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body.timestamp).toBeDefined();
+        expect(new Date(response.body.timestamp)).toBeInstanceOf(Date);
+      });
+
+      it('should have consistent success response format', async () => {
+        // Arrange
+        mockGenerateItinerary.mockResolvedValue(mockItinerary);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data).toHaveProperty('sessionId');
+        expect(response.body.data).toHaveProperty('city');
+        expect(response.body.data).toHaveProperty('itinerary');
+        expect(response.body.data).toHaveProperty('spotsCount');
+        expect(response.body.data).toHaveProperty('message');
+        expect(response.body).toHaveProperty('timestamp');
+      });
+
+      it('should return itinerary with correct structure', async () => {
+        // Arrange
+        mockGenerateItinerary.mockResolvedValue(mockItinerary);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-itinerary')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body.data.itinerary).toHaveProperty('title');
+        expect(response.body.data.itinerary).toHaveProperty('totalDuration');
+        expect(response.body.data.itinerary).toHaveProperty('schedule');
+        expect(response.body.data.itinerary.schedule).toBeInstanceOf(Array);
+        expect(response.body.data.itinerary.schedule[0]).toHaveProperty('time');
+        expect(response.body.data.itinerary.schedule[0]).toHaveProperty('spot');
+        expect(response.body.data.itinerary.schedule[0]).toHaveProperty('duration');
+        expect(response.body.data.itinerary.schedule[0]).toHaveProperty('transportation');
+        expect(response.body.data.itinerary.schedule[0]).toHaveProperty('notes');
       });
     });
   });

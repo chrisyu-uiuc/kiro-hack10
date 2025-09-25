@@ -46,6 +46,14 @@ const validateSpotSelectionInput = [
     .withMessage('Session ID is required'),
 ];
 
+const validateItineraryGenerationInput = [
+  body('sessionId')
+    .isString()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Session ID is required'),
+];
+
 /**
  * POST /api/verify-city
  * Verifies if a city exists using AWS Bedrock Agent
@@ -262,6 +270,91 @@ router.post('/store-selections', validateSpotSelectionInput, async (req: Request
       status: 500,
       code: 'SELECTION_STORAGE_ERROR',
       message: 'Failed to store selections. Please try again later.',
+      originalError: error,
+    });
+  }
+});
+
+/**
+ * POST /api/generate-itinerary
+ * Generates a comprehensive travel itinerary from selected spots using AWS Bedrock Agent
+ */
+router.post('/generate-itinerary', validateItineraryGenerationInput, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input provided',
+          details: errors.array(),
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const { sessionId } = req.body;
+
+    // Get session
+    const session = sessionStorage.getSession(sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SESSION_NOT_FOUND',
+          message: 'Session not found. Please start over.',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Check if there are selected spots
+    if (!session.selectedSpots || session.selectedSpots.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'NO_SPOTS_SELECTED',
+          message: 'No spots have been selected. Please select spots first.',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Generate itinerary using Bedrock Agent
+    const itinerary = await bedrockService.generateItinerary(session.selectedSpots, sessionId);
+
+    // Store itinerary in session
+    const updateSuccess = sessionStorage.updateSession(sessionId, { itinerary });
+
+    if (!updateSuccess) {
+      return next({
+        status: 500,
+        code: 'SESSION_UPDATE_ERROR',
+        message: 'Failed to store itinerary',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        sessionId,
+        city: session.city,
+        itinerary,
+        spotsCount: session.selectedSpots.length,
+        message: `Successfully generated itinerary for ${session.selectedSpots.length} spots in ${session.city}`,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error in itinerary generation:', error);
+    
+    // Pass error to error handling middleware
+    return next({
+      status: 500,
+      code: 'ITINERARY_GENERATION_ERROR',
+      message: 'Failed to generate itinerary. Please try again later.',
       originalError: error,
     });
   }
