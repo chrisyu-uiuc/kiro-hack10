@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 
-// Create a mock that we can control
+// Create mocks that we can control
 const mockVerifyCityExists = vi.fn();
+const mockGenerateSpots = vi.fn();
 
 // Mock the BedrockAgentService module
 vi.mock('../../services/BedrockAgentService.js', () => {
@@ -11,8 +12,22 @@ vi.mock('../../services/BedrockAgentService.js', () => {
     BedrockAgentService: vi.fn().mockImplementation(() => {
       return {
         verifyCityExists: mockVerifyCityExists,
+        generateSpots: mockGenerateSpots,
       };
     }),
+  };
+});
+
+// Mock the session storage
+const mockSessionStorage = {
+  getSession: vi.fn(),
+  createSession: vi.fn(),
+  updateSession: vi.fn(),
+};
+
+vi.mock('../../middleware/sessionStorage.js', () => {
+  return {
+    sessionStorage: mockSessionStorage,
   };
 });
 
@@ -38,6 +53,18 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 describe('POST /api/verify-city', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset session storage mocks
+    mockSessionStorage.getSession.mockReturnValue({
+      sessionId: 'test-session',
+      city: '',
+      allSpots: [],
+      selectedSpots: [],
+      itinerary: null,
+      createdAt: new Date(),
+      lastAccessedAt: new Date(),
+    });
+    mockSessionStorage.createSession.mockReturnValue('test-session');
+    mockSessionStorage.updateSession.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -294,6 +321,270 @@ describe('POST /api/verify-city', () => {
       expect(response.body.data).toHaveProperty('city');
       expect(response.body.data).toHaveProperty('message');
       expect(response.body).toHaveProperty('timestamp');
+    });
+  });
+
+  describe('POST /api/generate-spots', () => {
+    const mockSpots = [
+      {
+        id: 'spot-1',
+        name: 'Eiffel Tower',
+        category: 'Landmark',
+        location: 'Champ de Mars',
+        description: 'Iconic iron tower in Paris',
+      },
+      {
+        id: 'spot-2',
+        name: 'Louvre Museum',
+        category: 'Museum',
+        location: '1st Arrondissement',
+        description: 'World famous art museum',
+      },
+    ];
+
+    describe('Successful spot generation', () => {
+      it('should generate spots for valid city and session', async () => {
+        // Arrange
+        mockGenerateSpots.mockResolvedValue(mockSpots);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Paris', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body).toMatchObject({
+          success: true,
+          data: {
+            spots: mockSpots,
+            sessionId: 'test-session',
+            city: 'Paris',
+            message: 'Generated 2 spots for Paris',
+          },
+        });
+        expect(response.body.timestamp).toBeDefined();
+        expect(mockGenerateSpots).toHaveBeenCalledWith('Paris', 'test-session');
+        expect(mockSessionStorage.updateSession).toHaveBeenCalledWith('test-session', { city: 'Paris' });
+        expect(mockSessionStorage.updateSession).toHaveBeenCalledWith('test-session', { allSpots: mockSpots });
+      });
+
+      it('should create new session if session does not exist', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockReturnValueOnce(null);
+        mockSessionStorage.getSession.mockReturnValueOnce({
+          sessionId: 'new-session',
+          city: '',
+          allSpots: [],
+          selectedSpots: [],
+          itinerary: null,
+          createdAt: new Date(),
+          lastAccessedAt: new Date(),
+        });
+        mockSessionStorage.createSession.mockReturnValue('new-session');
+        mockGenerateSpots.mockResolvedValue(mockSpots);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Tokyo', sessionId: 'non-existent-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(mockSessionStorage.createSession).toHaveBeenCalledWith('non-existent-session');
+        expect(mockSessionStorage.getSession).toHaveBeenCalledWith('new-session');
+      });
+
+      it('should trim whitespace from city names', async () => {
+        // Arrange
+        mockGenerateSpots.mockResolvedValue(mockSpots);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: '  London  ', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body.data.city).toBe('London');
+        expect(mockGenerateSpots).toHaveBeenCalledWith('London', 'test-session');
+        expect(mockSessionStorage.updateSession).toHaveBeenCalledWith('test-session', { city: 'London' });
+      });
+    });
+
+    describe('Input validation', () => {
+      it('should return validation error for empty city name', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: '', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid input provided',
+          },
+        });
+        expect(response.body.error.details).toBeDefined();
+      });
+
+      it('should return validation error for missing city field', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('should return validation error for missing sessionId field', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Paris' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('should return validation error for empty sessionId', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Paris', sessionId: '' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('should return validation error for non-string inputs', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 123, sessionId: 456 });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+    });
+
+    describe('Error handling', () => {
+      it('should handle BedrockAgentService errors gracefully', async () => {
+        // Arrange
+        mockGenerateSpots.mockRejectedValue(new Error('AWS service unavailable'));
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Berlin', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'SPOT_GENERATION_ERROR',
+            message: 'Failed to generate spots. Please try again later.',
+          },
+        });
+      });
+
+      it('should handle session creation failure', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockReturnValueOnce(null);
+        mockSessionStorage.getSession.mockReturnValueOnce(null);
+        mockSessionStorage.createSession.mockReturnValue('new-session');
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Madrid', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'SESSION_ERROR',
+            message: 'Failed to create session',
+          },
+        });
+      });
+
+      it('should handle network timeout errors', async () => {
+        // Arrange
+        mockGenerateSpots.mockRejectedValue(new Error('Request timeout'));
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Rome', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body.error.code).toBe('SPOT_GENERATION_ERROR');
+      });
+    });
+
+    describe('Response format', () => {
+      it('should include timestamp in all responses', async () => {
+        // Arrange
+        mockGenerateSpots.mockResolvedValue(mockSpots);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Barcelona', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body.timestamp).toBeDefined();
+        expect(new Date(response.body.timestamp)).toBeInstanceOf(Date);
+      });
+
+      it('should have consistent success response format', async () => {
+        // Arrange
+        mockGenerateSpots.mockResolvedValue(mockSpots);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Amsterdam', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data).toHaveProperty('spots');
+        expect(response.body.data).toHaveProperty('sessionId');
+        expect(response.body.data).toHaveProperty('city');
+        expect(response.body.data).toHaveProperty('message');
+        expect(response.body).toHaveProperty('timestamp');
+      });
+
+      it('should return spots with correct structure', async () => {
+        // Arrange
+        mockGenerateSpots.mockResolvedValue(mockSpots);
+
+        // Act
+        const response = await request(app)
+          .post('/api/generate-spots')
+          .send({ city: 'Vienna', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body.data.spots).toHaveLength(2);
+        expect(response.body.data.spots[0]).toHaveProperty('id');
+        expect(response.body.data.spots[0]).toHaveProperty('name');
+        expect(response.body.data.spots[0]).toHaveProperty('category');
+        expect(response.body.data.spots[0]).toHaveProperty('location');
+        expect(response.body.data.spots[0]).toHaveProperty('description');
+      });
     });
   });
 });

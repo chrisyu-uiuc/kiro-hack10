@@ -28,7 +28,7 @@
   - Write unit tests for city verification logic
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 5. Implement spot generation API endpoint
+- [x] 5. Implement spot generation API endpoint
   - Create POST /api/generate-spots endpoint with city and session parameters
   - Use BedrockAgentService to generate 10-20 spots with categories and descriptions
   - Parse and structure agent response into consistent spot data format
