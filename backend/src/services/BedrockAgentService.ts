@@ -233,7 +233,47 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
                 `${spot.name} (${spot.category}) - ${spot.description}`
             ).join('\n');
 
-            const prompt = `You must respond with ONLY a valid JSON object. Create a travel itinerary for these spots:
+            const prompt = `You must respond with ONLY a valid JSON object. Create a realistic travel itinerary for these spots with proper timing constraints:
+      
+      ${spotsText}
+      
+TIMING REQUIREMENTS:
+- Plan for a full day starting at 9:00 AM
+- Include realistic visit durations based on attraction type (museums: 2-3 hours, parks: 1-2 hours, restaurants: 1 hour, viewpoints: 30-45 minutes)
+- Add 15-30 minutes travel time between locations depending on distance
+- Group nearby attractions together to minimize travel time
+- Include a lunch break (1 hour) around 12:00-1:00 PM
+- End the day by 6:00 PM
+- Consider typical opening hours (most attractions open 9-10 AM, close 5-6 PM)
+
+IMPORTANT: Your response must be ONLY valid JSON in this exact format:
+{
+  "title": "Your Travel Itinerary Title",
+  "totalDuration": "9 hours (9:00 AM - 6:00 PM)",
+  "schedule": [
+    {
+      "time": "9:00 AM - 10:30 AM",
+      "spot": "Spot Name",
+      "duration": "1.5 hours",
+      "transportation": "15 min walk from previous location",
+      "notes": "Best visited in the morning. Arrive early to avoid crowds."
+    }
+  ]
+}
+
+Do not include any text before or after the JSON.`;
+
+            let response: string;
+            
+            try {
+                // Try the enhanced prompt first
+                response = await this.invokeAgent(prompt, sessionId);
+                console.log('🔍 Raw Bedrock Agent Itinerary Response (Enhanced):', response);
+            } catch (enhancedError) {
+                console.warn('⚠️ Enhanced prompt failed, falling back to basic prompt:', enhancedError);
+                
+                // Fallback to simpler prompt if enhanced one fails
+                const basicPrompt = `You must respond with ONLY a valid JSON object. Create a travel itinerary for these spots:
       
       ${spotsText}
       
@@ -253,10 +293,15 @@ IMPORTANT: Your response must be ONLY valid JSON in this exact format:
 }
 
 Do not include any text before or after the JSON.`;
-
-            const response = await this.invokeAgent(prompt, sessionId);
-
-            console.log('🔍 Raw Bedrock Agent Itinerary Response:', response);
+                
+                try {
+                    response = await this.invokeAgent(basicPrompt, sessionId);
+                    console.log('🔍 Raw Bedrock Agent Itinerary Response (Basic):', response);
+                } catch (basicError) {
+                    console.error('❌ Both enhanced and basic prompts failed:', basicError);
+                    return this.getFallbackItinerary(selectedSpots);
+                }
+            }
 
             // Check if the response indicates an error or inability to help
             if (response.toLowerCase().includes('sorry') || response.toLowerCase().includes('cannot') || response.toLowerCase().includes('unable')) {
@@ -303,20 +348,39 @@ Do not include any text before or after the JSON.`;
      */
     private getFallbackItinerary(selectedSpots: Spot[]): Itinerary {
         const schedule = selectedSpots.map((spot, index) => {
-            const startHour = 9 + (index * 2);
-            const endHour = startHour + 1;
+            // More realistic timing with proper durations based on category
+            let duration = '1.5 hours';
+            let startTime = 9 + (index * 2);
+            
+            // Adjust duration based on spot category
+            if (spot.category === 'Museum') duration = '2-3 hours';
+            else if (spot.category === 'Park') duration = '1-2 hours';
+            else if (spot.category === 'Restaurant') duration = '1 hour';
+            else if (spot.category === 'Viewpoint') duration = '45 minutes';
+            
+            // Add lunch break after 2-3 spots
+            if (index === 2) {
+                startTime = 12; // Lunch time
+                duration = '1 hour';
+            } else if (index > 2) {
+                startTime = 13 + ((index - 3) * 2); // Resume after lunch
+            }
+            
+            const endTime = startTime + (duration.includes('2-3') ? 2.5 : duration.includes('1-2') ? 1.5 : 1);
+            const timeString = `${startTime}:00 ${startTime < 12 ? 'AM' : 'PM'} - ${Math.floor(endTime)}:${endTime % 1 === 0.5 ? '30' : '00'} ${endTime < 12 ? 'AM' : 'PM'}`;
+            
             return {
-                time: `${startHour}:00 AM - ${endHour}:00 AM`,
+                time: timeString,
                 spot: spot.name,
-                duration: '1-2 hours',
-                transportation: index === 0 ? 'Start here' : 'Walking/Public transport',
-                notes: `Visit ${spot.name} - ${spot.description}`
+                duration,
+                transportation: index === 0 ? 'Start here' : '15-20 min walk/transit',
+                notes: `Visit ${spot.name} - ${spot.description.substring(0, 80)}${spot.description.length > 80 ? '...' : ''}`
             };
         });
 
         return {
             title: 'Your Custom Travel Itinerary',
-            totalDuration: `${selectedSpots.length * 2} hours`,
+            totalDuration: '9 hours (9:00 AM - 6:00 PM)',
             schedule
         };
     }

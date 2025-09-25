@@ -418,7 +418,7 @@ describe('BedrockAgentService', () => {
       
       // Should return fallback itinerary instead of throwing
       expect(result.title).toBe('Your Custom Travel Itinerary');
-      expect(result.totalDuration).toBe('4 hours');
+      expect(result.totalDuration).toBe('9 hours (9:00 AM - 6:00 PM)');
       expect(result.schedule).toHaveLength(2);
       expect(result.schedule[0].spot).toBe('Eiffel Tower');
     });

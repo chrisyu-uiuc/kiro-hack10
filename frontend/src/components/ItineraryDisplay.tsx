@@ -107,11 +107,15 @@ function ItineraryDisplay({
       <div className="itinerary-schedule">
         {state.itinerary.schedule.map((item, index) => (
           <div key={index} className="schedule-item">
-            <div className="schedule-time">{item.time}</div>
+            <div className="schedule-header">
+              <div className="schedule-time">{item.time}</div>
+              <div className="schedule-duration">⏱️ {item.duration}</div>
+            </div>
             <div className="schedule-spot">{item.spot}</div>
             <div className="schedule-details">
-              <span>⏱️ Duration: {item.duration}</span>
-              <span>🚗 Transportation: {item.transportation}</span>
+              {item.transportation && (
+                <span className="transportation">🚗 {item.transportation}</span>
+              )}
             </div>
             {item.notes && (
               <div className="schedule-notes">💡 {item.notes}</div>
