@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Run & Test Full Project",
+  "description": "Automatically runs both backend and frontend servers and executes tests when source code files are modified",
+  "version": "1",
+  "when": {
+    "type": "userTriggered",
+    "patterns": [
+      "backend/src/**/*.ts",
+      "frontend/src/**/*.tsx",
+      "frontend/src/**/*.ts",
+      "backend/package.json",
+      "frontend/package.json",
+      "package.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Source code has been modified. Please run the full project by starting both the backend and frontend servers, then execute all tests to ensure everything is working correctly. Start the backend server first, then the frontend server, and finally run the test suites for both projects."
+  }
+}

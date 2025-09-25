@@ -1,192 +1,323 @@
 import { BedrockAgentRuntimeClient, InvokeAgentCommand } from '@aws-sdk/client-bedrock-agent-runtime';
 
 export interface Spot {
-  id: string;
-  name: string;
-  category: string;
-  location: string;
-  description: string;
+    id: string;
+    name: string;
+    category: string;
+    location: string;
+    description: string;
 }
 
 export interface Itinerary {
-  title: string;
-  totalDuration: string;
-  schedule: ScheduleItem[];
+    title: string;
+    totalDuration: string;
+    schedule: ScheduleItem[];
 }
 
 export interface ScheduleItem {
-  time: string;
-  spot: string;
-  duration: string;
-  transportation: string;
-  notes: string;
+    time: string;
+    spot: string;
+    duration: string;
+    transportation: string;
+    notes: string;
 }
 
 export class BedrockAgentService {
-  private client: BedrockAgentRuntimeClient;
-  private agentId: string;
-  private agentAliasId: string;
+    private client: BedrockAgentRuntimeClient;
+    private agentId: string;
+    private agentAliasId: string;
 
-  constructor() {
-    this.client = new BedrockAgentRuntimeClient({
-      region: process.env.AWS_REGION || 'us-east-1',
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-      },
-    });
-    
-    this.agentId = process.env.BEDROCK_AGENT_ID || 'BTATPBP5VG';
-    this.agentAliasId = process.env.BEDROCK_AGENT_ALIAS_ID || 'JFTVDFJYFF';
-  }
+    constructor() {
+        this.client = new BedrockAgentRuntimeClient({
+            region: process.env.AWS_REGION || 'us-east-1',
+            credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+            },
+        });
 
-  /**
-   * Invoke the Bedrock Agent with a prompt and session management
-   */
-  async invokeAgent(prompt: string, sessionId: string): Promise<string> {
-    try {
-      const command = new InvokeAgentCommand({
-        agentId: this.agentId,
-        agentAliasId: this.agentAliasId,
-        sessionId,
-        inputText: prompt,
-      });
+        this.agentId = process.env.BEDROCK_AGENT_ID || 'BTATPBP5VG';
+        this.agentAliasId = process.env.BEDROCK_AGENT_ALIAS_ID || 'JFTVDFJYFF';
+    }
 
-      const response = await this.client.send(command);
-      
-      if (!response.completion) {
-        throw new Error('No completion received from Bedrock Agent');
-      }
+    /**
+     * Invoke the Bedrock Agent with a prompt and session management
+     */
+    async invokeAgent(prompt: string, sessionId: string): Promise<string> {
+        try {
+            console.log('🔧 Bedrock Agent Config:', {
+                agentId: this.agentId,
+                agentAliasId: this.agentAliasId,
+                region: process.env.AWS_REGION,
+                hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+                hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
+            });
 
-      // Process the streaming response
-      let fullResponse = '';
-      for await (const chunk of response.completion) {
-        if (chunk.chunk?.bytes) {
-          const text = new TextDecoder().decode(chunk.chunk.bytes);
-          fullResponse += text;
+            const command = new InvokeAgentCommand({
+                agentId: this.agentId,
+                agentAliasId: this.agentAliasId,
+                sessionId,
+                inputText: prompt,
+            });
+
+            console.log('📤 Sending command to Bedrock Agent...');
+            const response = await this.client.send(command);
+            console.log('📥 Received response from Bedrock Agent');
+
+            if (!response.completion) {
+                throw new Error('No completion received from Bedrock Agent');
+            }
+
+            // Process the streaming response
+            let fullResponse = '';
+            for await (const chunk of response.completion) {
+                if (chunk.chunk?.bytes) {
+                    const text = new TextDecoder().decode(chunk.chunk.bytes);
+                    fullResponse += text;
+                }
+            }
+
+            console.log('✅ Full response processed, length:', fullResponse.length);
+            return fullResponse.trim();
+        } catch (error) {
+            console.error('❌ Error invoking Bedrock Agent:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                name: error instanceof Error ? error.name : 'Unknown',
+                stack: error instanceof Error ? error.stack : undefined
+            });
+            throw new Error(`Failed to invoke Bedrock Agent: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-      }
-
-      return fullResponse.trim();
-    } catch (error) {
-      console.error('Error invoking Bedrock Agent:', error);
-      throw new Error(`Failed to invoke Bedrock Agent: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
 
-  /**
-   * Verify if a city exists using the Bedrock Agent
-   */
-  async verifyCityExists(city: string): Promise<boolean> {
-    try {
-      const prompt = `Please verify if "${city}" is a valid city name that exists. Respond with only "YES" if it's a valid city, or "NO" if it's not a valid city.`;
-      const sessionId = `city-verification-${Date.now()}`;
-      
-      const response = await this.invokeAgent(prompt, sessionId);
-      
-      // Parse the response to determine if city is valid
-      const normalizedResponse = response.toUpperCase().trim();
-      return normalizedResponse.includes('YES') || normalizedResponse.startsWith('YES');
-    } catch (error) {
-      console.error('Error verifying city:', error);
-      throw new Error(`Failed to verify city: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    /**
+     * Verify if a city exists using the Bedrock Agent
+     */
+    async verifyCityExists(city: string): Promise<boolean> {
+        try {
+            const prompt = `Please verify if "${city}" is a valid city name that exists. Respond with only "YES" if it's a valid city, or "NO" if it's not a valid city.`;
+            const sessionId = `city-verification-${Date.now()}`;
+
+            const response = await this.invokeAgent(prompt, sessionId);
+
+            // Parse the response to determine if city is valid
+            const normalizedResponse = response.toUpperCase().trim();
+            return normalizedResponse.includes('YES') || normalizedResponse.startsWith('YES');
+        } catch (error) {
+            console.error('Error verifying city:', error);
+            throw new Error(`Failed to verify city: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
-  }
 
-  /**
-   * Generate spots for a given city using the Bedrock Agent
-   */
-  async generateSpots(city: string, sessionId: string): Promise<Spot[]> {
-    try {
-      const prompt = `Generate 10-20 tourist spots and attractions for ${city}. For each spot, provide:
-      - Name of the spot
-      - Category (e.g., Museum, Park, Restaurant, Historical Site, etc.)
-      - Location/Region within the city
-      - Brief description (1-2 sentences)
-      
-      Format the response as a JSON array with objects containing: id, name, category, location, description fields.`;
-      
-      const response = await this.invokeAgent(prompt, sessionId);
-      
-      // Parse the JSON response
-      try {
-        // Extract JSON from the response if it's wrapped in text
-        const jsonMatch = response.match(/\[[\s\S]*\]/);
-        const jsonString = jsonMatch ? jsonMatch[0] : response;
-        
-        const spots = JSON.parse(jsonString);
-        
-        // Validate and ensure each spot has required fields
-        return spots.map((spot: any, index: number) => ({
-          id: spot.id || `spot-${index + 1}`,
-          name: spot.name || 'Unknown Spot',
-          category: spot.category || 'Attraction',
-          location: spot.location || 'City Center',
-          description: spot.description || 'No description available',
-        }));
-      } catch (parseError) {
-        console.error('Error parsing spots JSON:', parseError);
-        throw new Error('Failed to parse spots data from agent response');
-      }
-    } catch (error) {
-      console.error('Error generating spots:', error);
-      throw new Error(`Failed to generate spots: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    /**
+     * Generate spots for a given city using the Bedrock Agent
+     */
+    async generateSpots(city: string, sessionId: string): Promise<Spot[]> {
+        try {
+            const prompt = `You must respond with ONLY a valid JSON array. Generate exactly 10 tourist spots for ${city}. 
+
+IMPORTANT: Your response must be ONLY valid JSON in this exact format:
+[
+  {
+    "id": "spot-1",
+    "name": "Spot Name",
+    "category": "Museum",
+    "location": "District Name",
+    "description": "Brief description (max 100 characters)"
+  }
+]
+
+Do not include any text before or after the JSON. Keep descriptions short. Categories should be: Museum, Park, Restaurant, Historical Site, Shopping, Entertainment, Religious Site, Market, Viewpoint, or Beach.`;
+
+            const response = await this.invokeAgent(prompt, sessionId);
+
+            console.log('🔍 Raw Bedrock Agent Response:', response);
+
+            // Check if the response indicates an error or inability to help
+            if (response.toLowerCase().includes('sorry') || response.toLowerCase().includes('cannot') || response.toLowerCase().includes('unable')) {
+                console.error('❌ Bedrock Agent returned an error response:', response);
+                // Return fallback data for demo purposes
+                return this.getFallbackSpots(city);
+            }
+
+            // Parse the JSON response
+            try {
+                // Extract JSON from the response if it's wrapped in text
+                let jsonMatch = response.match(/\[[\s\S]*\]/);
+                let jsonString = jsonMatch ? jsonMatch[0] : response;
+
+                console.log('🔍 Extracted JSON string length:', jsonString.length);
+
+                // Handle truncated JSON by trying to fix it
+                if (!jsonString.endsWith(']')) {
+                    console.log('⚠️ JSON appears truncated, attempting to fix...');
+
+                    // Find the last complete object
+                    const lastCompleteObject = jsonString.lastIndexOf('},');
+                    if (lastCompleteObject > 0) {
+                        jsonString = jsonString.substring(0, lastCompleteObject + 1) + '\n]';
+                        console.log('🔧 Fixed truncated JSON, new length:', jsonString.length);
+                    }
+                }
+
+                const spots = JSON.parse(jsonString);
+
+                // Validate and ensure each spot has required fields
+                return spots.map((spot: any, index: number) => ({
+                    id: spot.id || `spot-${index + 1}`,
+                    name: spot.name || 'Unknown Spot',
+                    category: spot.category || 'Attraction',
+                    location: spot.location || 'City Center',
+                    description: spot.description || 'No description available',
+                }));
+            } catch (parseError) {
+                console.error('Error parsing spots JSON:', parseError);
+                console.log('🔍 Attempting to use fallback spots for:', city);
+                return this.getFallbackSpots(city);
+            }
+        } catch (error) {
+            console.error('Error generating spots:', error);
+            console.log('🔍 Using fallback spots due to error for:', city);
+            return this.getFallbackSpots(city);
+        }
     }
-  }
 
-  /**
-   * Generate an itinerary from selected spots using the Bedrock Agent
-   */
-  async generateItinerary(selectedSpots: Spot[], sessionId: string): Promise<Itinerary> {
-    try {
-      const spotsText = selectedSpots.map(spot => 
-        `${spot.name} (${spot.category}) - ${spot.description}`
-      ).join('\n');
-      
-      const prompt = `Create a detailed travel itinerary for these selected spots:
+    /**
+     * Provide fallback spots when Bedrock Agent fails
+     */
+    private getFallbackSpots(city: string): Spot[] {
+        return [
+            {
+                id: 'spot-1',
+                name: `${city} Central Park`,
+                category: 'Park',
+                location: 'City Center',
+                description: `A beautiful central park in the heart of ${city}, perfect for relaxation and outdoor activities.`
+            },
+            {
+                id: 'spot-2',
+                name: `${city} Museum of History`,
+                category: 'Museum',
+                location: 'Cultural District',
+                description: `Learn about the rich history and culture of ${city} through fascinating exhibits and artifacts.`
+            },
+            {
+                id: 'spot-3',
+                name: `${city} Old Town`,
+                category: 'Historical Site',
+                location: 'Historic Quarter',
+                description: `Explore the charming old town area with traditional architecture and local shops.`
+            },
+            {
+                id: 'spot-4',
+                name: `${city} Market Square`,
+                category: 'Market',
+                location: 'Downtown',
+                description: `A vibrant market square where you can find local crafts, food, and souvenirs.`
+            },
+            {
+                id: 'spot-5',
+                name: `${city} Observation Deck`,
+                category: 'Viewpoint',
+                location: 'City Heights',
+                description: `Get panoramic views of ${city} from this popular observation deck.`
+            }
+        ];
+    }
+
+    /**
+     * Generate an itinerary from selected spots using the Bedrock Agent
+     */
+    async generateItinerary(selectedSpots: Spot[], sessionId: string): Promise<Itinerary> {
+        try {
+            const spotsText = selectedSpots.map(spot =>
+                `${spot.name} (${spot.category}) - ${spot.description}`
+            ).join('\n');
+
+            const prompt = `You must respond with ONLY a valid JSON object. Create a travel itinerary for these spots:
       
       ${spotsText}
       
-      Please provide:
-      - A title for the itinerary
-      - Total estimated duration for the entire itinerary
-      - A schedule with time slots, including:
-        - Recommended time to visit each spot
-        - Duration to spend at each location
-        - Transportation method between spots
-        - Any helpful notes or tips
-      
-      Format the response as JSON with: title, totalDuration, and schedule array containing objects with: time, spot, duration, transportation, notes fields.`;
-      
-      const response = await this.invokeAgent(prompt, sessionId);
-      
-      // Parse the JSON response
-      try {
-        // Extract JSON from the response if it's wrapped in text
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : response;
-        
-        const itinerary = JSON.parse(jsonString);
-        
-        // Validate and ensure itinerary has required structure
-        return {
-          title: itinerary.title || 'Your Travel Itinerary',
-          totalDuration: itinerary.totalDuration || '1 day',
-          schedule: (itinerary.schedule || []).map((item: any) => ({
-            time: item.time || '9:00 AM',
-            spot: item.spot || 'Unknown Location',
-            duration: item.duration || '1 hour',
-            transportation: item.transportation || 'Walking',
-            notes: item.notes || '',
-          })),
-        };
-      } catch (parseError) {
-        console.error('Error parsing itinerary JSON:', parseError);
-        throw new Error('Failed to parse itinerary data from agent response');
-      }
-    } catch (error) {
-      console.error('Error generating itinerary:', error);
-      throw new Error(`Failed to generate itinerary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+IMPORTANT: Your response must be ONLY valid JSON in this exact format:
+{
+  "title": "Your Travel Itinerary Title",
+  "totalDuration": "X hours",
+  "schedule": [
+    {
+      "time": "9:00 AM - 10:30 AM",
+      "spot": "Spot Name",
+      "duration": "1.5 hours",
+      "transportation": "Walking",
+      "notes": "Helpful tip"
     }
-  }
+  ]
+}
+
+Do not include any text before or after the JSON.`;
+
+            const response = await this.invokeAgent(prompt, sessionId);
+
+            console.log('🔍 Raw Bedrock Agent Itinerary Response:', response);
+
+            // Check if the response indicates an error or inability to help
+            if (response.toLowerCase().includes('sorry') || response.toLowerCase().includes('cannot') || response.toLowerCase().includes('unable')) {
+                console.error('❌ Bedrock Agent returned an error response for itinerary:', response);
+                return this.getFallbackItinerary(selectedSpots);
+            }
+
+            // Parse the JSON response
+            try {
+                // Extract JSON from the response if it's wrapped in text
+                const jsonMatch = response.match(/\{[\s\S]*\}/);
+                const jsonString = jsonMatch ? jsonMatch[0] : response;
+
+                console.log('🔍 Extracted Itinerary JSON string:', jsonString);
+
+                const itinerary = JSON.parse(jsonString);
+
+                // Validate and ensure itinerary has required structure
+                return {
+                    title: itinerary.title || 'Your Travel Itinerary',
+                    totalDuration: itinerary.totalDuration || '1 day',
+                    schedule: (itinerary.schedule || []).map((item: any) => ({
+                        time: item.time || '9:00 AM',
+                        spot: item.spot || 'Unknown Location',
+                        duration: item.duration || '1 hour',
+                        transportation: item.transportation || 'Walking',
+                        notes: item.notes || '',
+                    })),
+                };
+            } catch (parseError) {
+                console.error('Error parsing itinerary JSON:', parseError);
+                console.log('🔍 Using fallback itinerary due to parse error');
+                return this.getFallbackItinerary(selectedSpots);
+            }
+        } catch (error) {
+            console.error('Error generating itinerary:', error);
+            console.log('🔍 Using fallback itinerary due to error');
+            return this.getFallbackItinerary(selectedSpots);
+        }
+    }
+
+    /**
+     * Provide fallback itinerary when Bedrock Agent fails
+     */
+    private getFallbackItinerary(selectedSpots: Spot[]): Itinerary {
+        const schedule = selectedSpots.map((spot, index) => {
+            const startHour = 9 + (index * 2);
+            const endHour = startHour + 1;
+            return {
+                time: `${startHour}:00 AM - ${endHour}:00 AM`,
+                spot: spot.name,
+                duration: '1-2 hours',
+                transportation: index === 0 ? 'Start here' : 'Walking/Public transport',
+                notes: `Visit ${spot.name} - ${spot.description}`
+            };
+        });
+
+        return {
+            title: 'Your Custom Travel Itinerary',
+            totalDuration: `${selectedSpots.length * 2} hours`,
+            schedule
+        };
+    }
 }

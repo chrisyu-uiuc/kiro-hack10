@@ -35,7 +35,7 @@ function App() {
           <Route 
             path="/itinerary" 
             element={
-              appState.state.itinerary ? (
+              appState.state.city && appState.state.sessionId && appState.state.selectedSpotIds.length > 0 ? (
                 <ItineraryDisplay {...appState} />
               ) : (
                 <Navigate to="/" replace />

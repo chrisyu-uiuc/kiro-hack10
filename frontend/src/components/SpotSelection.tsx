@@ -51,13 +51,16 @@ function SpotSelection({
     setLoading(true);
     
     try {
+      console.log('🔄 Storing selections:', selectedSpots.map(spot => spot.id));
       await ApiService.storeSelections(
         selectedSpots.map(spot => spot.id), 
         state.sessionId
       );
+      console.log('✅ Selections stored, navigating to itinerary');
       goToStep('itinerary');
       navigate('/itinerary');
     } catch (error) {
+      console.error('❌ Error storing selections:', error);
       setError(error instanceof Error ? error.message : 'Failed to store selections. Please try again.');
     } finally {
       setLoading(false);
@@ -116,13 +119,7 @@ function SpotSelection({
             <div className="spot-location">📍 {spot.location}</div>
             <div className="spot-description">{spot.description}</div>
             {state.selectedSpotIds.includes(spot.id) && (
-              <div style={{ 
-                position: 'absolute', 
-                top: '10px', 
-                right: '10px', 
-                color: '#646cff',
-                fontSize: '20px'
-              }}>
+              <div className="spot-checkmark">
                 ✓
               </div>
             )}
