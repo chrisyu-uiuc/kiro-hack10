@@ -1,21 +1,21 @@
 # Implementation Plan
 
-- [ ] 1. Update Bedrock Agent prompt to request realistic timing
-  - Modify the generateItinerary method in BedrockAgentService.ts to include timing requirements in the prompt
-  - Add instructions to the prompt asking for specific visit durations, start/end times, and travel times between locations
-  - Request the agent to group nearby attractions together and include meal breaks
+- [x] 1. Update Bedrock Agent prompt to request realistic timing
+  - ✅ Modified the generateItinerary method in BedrockAgentService.ts to include timing requirements in the prompt
+  - ✅ Added instructions to the prompt asking for specific visit durations, start/end times, and travel times between locations
+  - ✅ Request the agent to group nearby attractions together and include meal breaks
   - _Requirements: 1.1, 1.2, 2.1, 3.1_
 
-- [ ] 2. Enhance ItineraryDisplay component to show timing information
-  - Update ItineraryDisplay.tsx to display any timing information that comes back from the enhanced prompt
-  - Show start/end times, visit durations, and travel information if present in the response
-  - Add simple styling to make timing information clear and readable
+- [x] 2. Enhance ItineraryDisplay component to show timing information
+  - ✅ Updated ItineraryDisplay.tsx to display any timing information that comes back from the enhanced prompt
+  - ✅ Show start/end times, visit durations, and travel information if present in the response
+  - ✅ Added simple styling to make timing information clear and readable
   - _Requirements: 1.3, 2.3, 4.1, 5.4_
 
-- [ ] 3. Add basic error handling for enhanced responses
-  - Add try-catch around the enhanced prompt to fall back to original behavior if it fails
-  - Ensure the existing itinerary display still works even if timing information is missing
-  - Log any parsing issues for debugging without breaking the user experience
+- [x] 3. Add basic error handling for enhanced responses
+  - ✅ Added try-catch around the enhanced prompt to fall back to original behavior if it fails
+  - ✅ Ensure the existing itinerary display still works even if timing information is missing
+  - ✅ Log any parsing issues for debugging without breaking the user experience
   - _Requirements: 5.3, 5.4_
 
 - [ ] 4. Test the enhanced prompts with real data
