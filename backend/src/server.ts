@@ -5,6 +5,7 @@ import { config } from './config/index.js';
 import { sessionStorageMiddleware } from './middleware/sessionStorage.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import cityRoutes from './routes/cityRoutes.js';
 
 const app = express();
 
@@ -48,7 +49,8 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// API routes will be added here in future tasks
+// API routes
+app.use('/api', cityRoutes);
 
 // 404 handler for unmatched routes
 app.use('*', (req, res) => {

@@ -21,7 +21,7 @@
   - Add request logging and basic security headers
   - _Requirements: 4.1, 4.2_
 
-- [ ] 4. Implement city verification API endpoint
+- [x] 4. Implement city verification API endpoint
   - Create POST /api/verify-city endpoint with input validation
   - Integrate with BedrockAgentService to verify city existence using agent
   - Implement proper error responses for invalid cities
