@@ -36,17 +36,16 @@ const validateSelectedSpots = (selectedSpots: any): string | null => {
  * POST /api/verify-city
  * Verifies if a city exists using AWS Bedrock Agent
  */
-router.post('/verify-city', validateCityInput, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/verify-city', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    // Validate input
+    const cityError = validateCityInput(req.body.city);
+    if (cityError) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input provided',
-          details: errors.array(),
+          message: cityError,
         },
         timestamp: new Date().toISOString(),
       });
@@ -98,17 +97,17 @@ router.post('/verify-city', validateCityInput, async (req: Request, res: Respons
  * POST /api/generate-spots
  * Generates 10-20 recommended spots for a city using AWS Bedrock Agent
  */
-router.post('/generate-spots', validateSpotGenerationInput, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/generate-spots', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    // Validate input
+    const cityError = validateCityInput(req.body.city);
+    const sessionError = validateSessionId(req.body.sessionId);
+    if (cityError || sessionError) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input provided',
-          details: errors.array(),
+          message: cityError || sessionError,
         },
         timestamp: new Date().toISOString(),
       });
@@ -167,17 +166,17 @@ router.post('/generate-spots', validateSpotGenerationInput, async (req: Request,
  * POST /api/store-selections
  * Stores user's selected spots in session storage
  */
-router.post('/store-selections', validateSpotSelectionInput, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/store-selections', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    // Validate input
+    const sessionError = validateSessionId(req.body.sessionId);
+    const spotsError = validateSelectedSpots(req.body.selectedSpots);
+    if (sessionError || spotsError) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input provided',
-          details: errors.array(),
+          message: sessionError || spotsError,
         },
         timestamp: new Date().toISOString(),
       });
@@ -257,17 +256,16 @@ router.post('/store-selections', validateSpotSelectionInput, async (req: Request
  * POST /api/generate-itinerary
  * Generates a comprehensive travel itinerary from selected spots using AWS Bedrock Agent
  */
-router.post('/generate-itinerary', validateItineraryGenerationInput, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/generate-itinerary', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    // Validate input
+    const sessionError = validateSessionId(req.body.sessionId);
+    if (sessionError) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input provided',
-          details: errors.array(),
+          message: sessionError,
         },
         timestamp: new Date().toISOString(),
       });
