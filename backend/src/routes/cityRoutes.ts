@@ -1,7 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { BedrockAgentService } from '../services/BedrockAgentService.js';
-const { body, validationResult } = require('express-validator');
 import { sessionStorage } from '../middleware/sessionStorage.js';
+
+// Use require for express-validator as it's a CommonJS module
+const { body, validationResult } = require('express-validator');
 
 const router = Router();
 const bedrockService = new BedrockAgentService();
