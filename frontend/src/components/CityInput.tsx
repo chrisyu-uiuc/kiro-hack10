@@ -33,7 +33,7 @@ function CityInput({
       if (result.valid) {
         setCity(result.city);
         // Generate a session ID for this user session
-        const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         setSessionId(sessionId);
         goToStep('spots');
         navigate('/spots');

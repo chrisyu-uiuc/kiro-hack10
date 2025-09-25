@@ -16,9 +16,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
   
   // Get client IP address
   const ip = req.ip || 
-    req.connection.remoteAddress || 
     req.socket.remoteAddress || 
-    (req.connection as any)?.socket?.remoteAddress ||
     'unknown';
 
   // Create log entry

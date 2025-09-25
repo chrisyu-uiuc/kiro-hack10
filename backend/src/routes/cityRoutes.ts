@@ -2,7 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { BedrockAgentService } from '../services/BedrockAgentService.js';
 import { sessionStorage } from '../middleware/sessionStorage.js';
 
-import { body, validationResult } from 'express-validator';
+import expressValidator from 'express-validator';
+const { body, validationResult } = expressValidator;
 
 const router = Router();
 const bedrockService = new BedrockAgentService();
@@ -106,7 +107,7 @@ router.post('/verify-city', validateCityInput, async (req: Request, res: Respons
     }
   } catch (error) {
     console.error('Error in city verification:', error);
-    
+
     // Pass error to error handling middleware
     return next({
       status: 500,
@@ -175,7 +176,7 @@ router.post('/generate-spots', validateSpotGenerationInput, async (req: Request,
     });
   } catch (error) {
     console.error('Error in spot generation:', error);
-    
+
     // Pass error to error handling middleware
     return next({
       status: 500,
@@ -224,7 +225,7 @@ router.post('/store-selections', validateSpotSelectionInput, async (req: Request
     // Validate that selected spots exist in the session's all spots
     const validSpotIds = session.allSpots.map(spot => spot.id);
     const invalidSpots = selectedSpots.filter((spotId: string) => !validSpotIds.includes(spotId));
-    
+
     if (invalidSpots.length > 0) {
       return res.status(400).json({
         success: false,
@@ -241,8 +242,8 @@ router.post('/store-selections', validateSpotSelectionInput, async (req: Request
     const selectedSpotObjects = session.allSpots.filter(spot => selectedSpots.includes(spot.id));
 
     // Update session with selected spots
-    const updateSuccess = sessionStorage.updateSession(sessionId, { 
-      selectedSpots: selectedSpotObjects 
+    const updateSuccess = sessionStorage.updateSession(sessionId, {
+      selectedSpots: selectedSpotObjects
     });
 
     if (!updateSuccess) {
@@ -265,7 +266,7 @@ router.post('/store-selections', validateSpotSelectionInput, async (req: Request
     });
   } catch (error) {
     console.error('Error in spot selection storage:', error);
-    
+
     // Pass error to error handling middleware
     return next({
       status: 500,
@@ -350,7 +351,7 @@ router.post('/generate-itinerary', validateItineraryGenerationInput, async (req:
     });
   } catch (error) {
     console.error('Error in itinerary generation:', error);
-    
+
     // Pass error to error handling middleware
     return next({
       status: 500,
