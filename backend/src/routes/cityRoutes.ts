@@ -30,6 +30,22 @@ const validateSpotGenerationInput = [
     .withMessage('Session ID is required'),
 ];
 
+const validateSpotSelectionInput = [
+  body('selectedSpots')
+    .isArray({ min: 1 })
+    .withMessage('Selected spots must be a non-empty array'),
+  body('selectedSpots.*')
+    .isString()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Each selected spot ID must be a non-empty string'),
+  body('sessionId')
+    .isString()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Session ID is required'),
+];
+
 /**
  * POST /api/verify-city
  * Verifies if a city exists using AWS Bedrock Agent
@@ -156,6 +172,96 @@ router.post('/generate-spots', validateSpotGenerationInput, async (req: Request,
       status: 500,
       code: 'SPOT_GENERATION_ERROR',
       message: 'Failed to generate spots. Please try again later.',
+      originalError: error,
+    });
+  }
+});
+
+/**
+ * POST /api/store-selections
+ * Stores user's selected spots in session storage
+ */
+router.post('/store-selections', validateSpotSelectionInput, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input provided',
+          details: errors.array(),
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const { selectedSpots, sessionId } = req.body;
+
+    // Get session
+    const session = sessionStorage.getSession(sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SESSION_NOT_FOUND',
+          message: 'Session not found. Please start over.',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Validate that selected spots exist in the session's all spots
+    const validSpotIds = session.allSpots.map(spot => spot.id);
+    const invalidSpots = selectedSpots.filter((spotId: string) => !validSpotIds.includes(spotId));
+    
+    if (invalidSpots.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_SPOT_SELECTION',
+          message: 'Some selected spots are not valid for this session',
+          details: { invalidSpots },
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Filter selected spots from all spots
+    const selectedSpotObjects = session.allSpots.filter(spot => selectedSpots.includes(spot.id));
+
+    // Update session with selected spots
+    const updateSuccess = sessionStorage.updateSession(sessionId, { 
+      selectedSpots: selectedSpotObjects 
+    });
+
+    if (!updateSuccess) {
+      return next({
+        status: 500,
+        code: 'SESSION_UPDATE_ERROR',
+        message: 'Failed to store selections',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        sessionId,
+        selectedCount: selectedSpotObjects.length,
+        selectedSpots: selectedSpotObjects,
+        message: `Successfully stored ${selectedSpotObjects.length} selected spots`,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error in spot selection storage:', error);
+    
+    // Pass error to error handling middleware
+    return next({
+      status: 500,
+      code: 'SELECTION_STORAGE_ERROR',
+      message: 'Failed to store selections. Please try again later.',
       originalError: error,
     });
   }

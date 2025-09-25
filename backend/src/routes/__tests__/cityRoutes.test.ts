@@ -587,4 +587,321 @@ describe('POST /api/verify-city', () => {
       });
     });
   });
+
+  describe('POST /api/store-selections', () => {
+    const mockSpots = [
+      {
+        id: 'spot-1',
+        name: 'Eiffel Tower',
+        category: 'Landmark',
+        location: 'Champ de Mars',
+        description: 'Iconic iron tower in Paris',
+      },
+      {
+        id: 'spot-2',
+        name: 'Louvre Museum',
+        category: 'Museum',
+        location: '1st Arrondissement',
+        description: 'World famous art museum',
+      },
+      {
+        id: 'spot-3',
+        name: 'Notre-Dame Cathedral',
+        category: 'Historical Site',
+        location: 'Île de la Cité',
+        description: 'Gothic cathedral',
+      },
+    ];
+
+    beforeEach(() => {
+      // Set up session with spots
+      mockSessionStorage.getSession.mockReturnValue({
+        sessionId: 'test-session',
+        city: 'Paris',
+        allSpots: mockSpots,
+        selectedSpots: [],
+        itinerary: null,
+        createdAt: new Date(),
+        lastAccessedAt: new Date(),
+      });
+    });
+
+    describe('Successful selection storage', () => {
+      it('should store selected spots successfully', async () => {
+        // Arrange
+        const selectedSpotIds = ['spot-1', 'spot-3'];
+
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: selectedSpotIds, sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body).toMatchObject({
+          success: true,
+          data: {
+            sessionId: 'test-session',
+            selectedCount: 2,
+            message: 'Successfully stored 2 selected spots',
+          },
+        });
+        expect(response.body.data.selectedSpots).toHaveLength(2);
+        expect(response.body.data.selectedSpots[0]).toMatchObject(mockSpots[0]);
+        expect(response.body.data.selectedSpots[1]).toMatchObject(mockSpots[2]);
+        expect(response.body.timestamp).toBeDefined();
+        expect(mockSessionStorage.updateSession).toHaveBeenCalledWith('test-session', {
+          selectedSpots: [mockSpots[0], mockSpots[2]],
+        });
+      });
+
+      it('should handle single spot selection', async () => {
+        // Arrange
+        const selectedSpotIds = ['spot-2'];
+
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: selectedSpotIds, sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body.data.selectedCount).toBe(1);
+        expect(response.body.data.selectedSpots).toHaveLength(1);
+        expect(response.body.data.selectedSpots[0]).toMatchObject(mockSpots[1]);
+      });
+
+      it('should handle all spots selection', async () => {
+        // Arrange
+        const selectedSpotIds = ['spot-1', 'spot-2', 'spot-3'];
+
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: selectedSpotIds, sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body.data.selectedCount).toBe(3);
+        expect(response.body.data.selectedSpots).toHaveLength(3);
+      });
+    });
+
+    describe('Input validation', () => {
+      it('should return validation error for empty selectedSpots array', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: [], sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid input provided',
+          },
+        });
+        expect(response.body.error.details).toBeDefined();
+      });
+
+      it('should return validation error for missing selectedSpots field', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('should return validation error for missing sessionId field', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1'] });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('should return validation error for empty sessionId', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1'], sessionId: '' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('should return validation error for non-array selectedSpots', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: 'spot-1', sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('should return validation error for empty spot IDs in array', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1', ''], sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      });
+    });
+
+    describe('Session validation', () => {
+      it('should return error when session not found', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockReturnValue(null);
+
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1'], sessionId: 'non-existent-session' });
+
+        // Assert
+        expect(response.status).toBe(404);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'SESSION_NOT_FOUND',
+            message: 'Session not found. Please start over.',
+          },
+        });
+      });
+
+      it('should return error for invalid spot IDs', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1', 'invalid-spot'], sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'INVALID_SPOT_SELECTION',
+            message: 'Some selected spots are not valid for this session',
+            details: { invalidSpots: ['invalid-spot'] },
+          },
+        });
+      });
+
+      it('should return error for multiple invalid spot IDs', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ 
+            selectedSpots: ['spot-1', 'invalid-1', 'invalid-2'], 
+            sessionId: 'test-session' 
+          });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error.details.invalidSpots).toEqual(['invalid-1', 'invalid-2']);
+      });
+    });
+
+    describe('Error handling', () => {
+      it('should handle session update failure', async () => {
+        // Arrange
+        mockSessionStorage.updateSession.mockReturnValue(false);
+
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1'], sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'SESSION_UPDATE_ERROR',
+            message: 'Failed to store selections',
+          },
+        });
+      });
+
+      it('should handle unexpected errors gracefully', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockImplementation(() => {
+          throw new Error('Unexpected error');
+        });
+
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1'], sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'SELECTION_STORAGE_ERROR',
+            message: 'Failed to store selections. Please try again later.',
+          },
+        });
+      });
+    });
+
+    describe('Response format', () => {
+      it('should include timestamp in all responses', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1'], sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body.timestamp).toBeDefined();
+        expect(new Date(response.body.timestamp)).toBeInstanceOf(Date);
+      });
+
+      it('should have consistent success response format', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1'], sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data).toHaveProperty('sessionId');
+        expect(response.body.data).toHaveProperty('selectedCount');
+        expect(response.body.data).toHaveProperty('selectedSpots');
+        expect(response.body.data).toHaveProperty('message');
+        expect(response.body).toHaveProperty('timestamp');
+      });
+
+      it('should return selected spots with correct structure', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/store-selections')
+          .send({ selectedSpots: ['spot-1'], sessionId: 'test-session' });
+
+        // Assert
+        expect(response.body.data.selectedSpots).toHaveLength(1);
+        expect(response.body.data.selectedSpots[0]).toHaveProperty('id');
+        expect(response.body.data.selectedSpots[0]).toHaveProperty('name');
+        expect(response.body.data.selectedSpots[0]).toHaveProperty('category');
+        expect(response.body.data.selectedSpots[0]).toHaveProperty('location');
+        expect(response.body.data.selectedSpots[0]).toHaveProperty('description');
+      });
+    });
+  });
 });
