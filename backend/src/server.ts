@@ -37,7 +37,7 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // Check if origin is in allowed list
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (typeof allowedOrigin === 'string') {
@@ -46,7 +46,7 @@ app.use(cors({
         return allowedOrigin.test(origin);
       }
     });
-    
+
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -71,10 +71,10 @@ app.use(sessionStorageMiddleware);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
-  res.status(200).json({ 
-    status: 'healthy', 
+  res.status(200).json({
+    status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: config.nodeEnv 
+    environment: config.nodeEnv
   });
 });
 
@@ -98,9 +98,10 @@ app.use(errorHandler);
 
 // Only start server if not in test environment
 if (process.env.NODE_ENV !== 'test') {
-  const server = app.listen(config.port, () => {
+  const server = app.listen(config.port, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`);
     console.log(`📍 Health check available at http://localhost:${config.port}/health`);
+    console.log(`🌐 Network access available at http://192.168.1.145:${config.port}/health`);
   });
 
   // Graceful shutdown
