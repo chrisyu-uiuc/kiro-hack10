@@ -38,7 +38,7 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // Check if origin is in allowed list
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (typeof allowedOrigin === 'string') {
@@ -47,7 +47,7 @@ app.use(cors({
         return allowedOrigin.test(origin);
       }
     });
-    
+
     if (isAllowed) {
       callback(null, true);
     } else {
