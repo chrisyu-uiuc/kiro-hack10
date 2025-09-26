@@ -22,7 +22,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS configuration - allow multiple origins for development
+// CORS configuration - allow multiple origins for development and production
 const allowedOrigins = [
   config.frontendUrl,
   'http://localhost:3000',
@@ -32,6 +32,12 @@ const allowedOrigins = [
   /^http:\/\/192\.168\.\d+\.\d+:3000$/,
   /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
   /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:3000$/,
+  // Allow AWS EC2 public IPs (for deployment)
+  /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$/,
+  /^https:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:3000$/,
+  // Allow common cloud provider IP ranges
+  /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+  /^https:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
 ];
 
 app.use(cors({

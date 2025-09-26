@@ -55,10 +55,23 @@ sudo ln -s /snap/bin/certbot /usr/bin/certbot
 echo -e "${YELLOW}📁 Setting up application directory...${NC}"
 cd /home/ubuntu
 
-# Prompt for repository URL
-echo -e "${YELLOW}📥 Repository Setup${NC}"
+# Get server information
+echo -e "${YELLOW}📥 Server Configuration${NC}"
+SERVER_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+echo "Detected EC2 public IP: $SERVER_IP"
+
 read -p "Enter your GitHub repository URL: " REPO_URL
-read -p "Enter your domain name (e.g., travel-planner.com): " DOMAIN_NAME
+read -p "Enter your domain name (optional, press Enter to use IP): " DOMAIN_NAME
+
+# Use IP if no domain provided
+if [ -z "$DOMAIN_NAME" ]; then
+    DOMAIN_NAME=$SERVER_IP
+    USE_HTTPS=false
+    echo "Using IP address: $DOMAIN_NAME"
+else
+    USE_HTTPS=true
+    echo "Using domain: $DOMAIN_NAME"
+fi
 
 # Clone repository
 echo -e "${YELLOW}📥 Cloning repository...${NC}"
@@ -80,6 +93,14 @@ echo
 read -p "AWS Region (default: us-east-1): " AWS_REGION
 AWS_REGION=${AWS_REGION:-us-east-1}
 
+if [ "$USE_HTTPS" = true ]; then
+    FRONTEND_URL="https://$DOMAIN_NAME"
+    API_URL="https://$DOMAIN_NAME/api"
+else
+    FRONTEND_URL="http://$DOMAIN_NAME:3000"
+    API_URL="http://$DOMAIN_NAME:3001"
+fi
+
 cat > .env.production << EOF
 NODE_ENV=production
 PORT=3001
@@ -88,7 +109,7 @@ AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 BEDROCK_AGENT_ID=BTATPBP5VG
 BEDROCK_AGENT_ALIAS_ID=JFTVDFJYFF
-FRONTEND_URL=https://$DOMAIN_NAME
+FRONTEND_URL=$FRONTEND_URL
 EOF
 
 echo -e "${GREEN}✅ Backend environment configured${NC}"
@@ -106,9 +127,11 @@ npm ci
 
 # Create production environment
 cat > .env.production << EOF
-VITE_API_URL=https://$DOMAIN_NAME/api
+VITE_API_URL=$API_URL
 VITE_NODE_ENV=production
 EOF
+
+echo -e "${GREEN}✅ Frontend configured with API URL: $API_URL${NC}"
 
 # Build frontend
 npm run build
@@ -122,7 +145,10 @@ echo -e "${GREEN}✅ Frontend built and deployed${NC}"
 
 # Configure Nginx
 echo -e "${YELLOW}🔧 Configuring Nginx...${NC}"
-sudo tee /etc/nginx/sites-available/travel-itinerary << EOF
+
+if [ "$USE_HTTPS" = true ]; then
+    # Domain-based configuration with SSL
+    sudo tee /etc/nginx/sites-available/travel-itinerary << EOF
 server {
     listen 80;
     server_name $DOMAIN_NAME www.$DOMAIN_NAME;
@@ -154,6 +180,36 @@ server {
     }
 }
 EOF
+else
+    # IP-based configuration without SSL
+    sudo tee /etc/nginx/sites-available/travel-itinerary << EOF
+server {
+    listen 80;
+    server_name $DOMAIN_NAME;
+    
+    # Frontend
+    location / {
+        root /var/www/html;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+        
+        # CORS headers for direct IP access
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
+    }
+    
+    # Backend API proxy (not needed for IP-based setup)
+    # Frontend will connect directly to :3001
+    
+    # Health check
+    location /health {
+        proxy_pass http://localhost:3001/health;
+        access_log off;
+    }
+}
+EOF
+fi
 
 # Enable site
 sudo ln -s /etc/nginx/sites-available/travel-itinerary /etc/nginx/sites-enabled/
@@ -163,18 +219,23 @@ sudo systemctl reload nginx
 
 echo -e "${GREEN}✅ Nginx configured${NC}"
 
-# Setup SSL with Let's Encrypt
-echo -e "${YELLOW}🔒 Setting up SSL certificate...${NC}"
-echo "Make sure your domain $DOMAIN_NAME points to this server's IP address"
-read -p "Press Enter when DNS is configured..."
+# Setup SSL with Let's Encrypt (only for domain-based setup)
+if [ "$USE_HTTPS" = true ]; then
+    echo -e "${YELLOW}🔒 Setting up SSL certificate...${NC}"
+    echo "Make sure your domain $DOMAIN_NAME points to this server's IP address ($SERVER_IP)"
+    read -p "Press Enter when DNS is configured..."
 
-sudo certbot --nginx -d $DOMAIN_NAME -d www.$DOMAIN_NAME --non-interactive --agree-tos --email admin@$DOMAIN_NAME
+    sudo certbot --nginx -d $DOMAIN_NAME -d www.$DOMAIN_NAME --non-interactive --agree-tos --email admin@$DOMAIN_NAME
 
-# Enable auto-renewal
-sudo systemctl enable certbot.timer
-sudo systemctl start certbot.timer
+    # Enable auto-renewal
+    sudo systemctl enable certbot.timer
+    sudo systemctl start certbot.timer
 
-echo -e "${GREEN}✅ SSL certificate configured${NC}"
+    echo -e "${GREEN}✅ SSL certificate configured${NC}"
+else
+    echo -e "${YELLOW}⚠️  Skipping SSL setup for IP-based deployment${NC}"
+    echo -e "${YELLOW}   For production, consider using a domain name${NC}"
+fi
 
 # Install CloudWatch agent (optional)
 echo -e "${YELLOW}📊 Installing CloudWatch agent...${NC}"
@@ -281,4 +342,10 @@ echo "- Check Nginx status: sudo systemctl status nginx"
 echo "- View Nginx logs: sudo tail -f /var/log/nginx/error.log"
 echo "- Check SSL certificate: sudo certbot certificates"
 echo ""
-echo -e "${GREEN}🌐 Your Travel Itinerary Generator is now live at: https://$DOMAIN_NAME${NC}"
+if [ "$USE_HTTPS" = true ]; then
+    echo -e "${GREEN}🌐 Your Travel Itinerary Generator is now live at: https://$DOMAIN_NAME${NC}"
+else
+    echo -e "${GREEN}🌐 Your Travel Itinerary Generator is now live at: http://$DOMAIN_NAME:3000${NC}"
+    echo -e "${GREEN}🔗 Backend API available at: http://$DOMAIN_NAME:3001${NC}"
+    echo -e "${YELLOW}⚠️  Note: Using HTTP without SSL. For production, use a domain with HTTPS.${NC}"
+fi
