@@ -94,7 +94,25 @@ export class BedrockAgentService {
      */
     async verifyCityExists(city: string): Promise<boolean> {
         try {
-            const prompt = `Please verify if "${city}" is a valid city name that exists. Respond with only "YES" if it's a valid city, or "NO" if it's not a valid city.`;
+            // Common ambiguous city names that should be accepted
+            const commonCities = [
+                'york', 'paris', 'london', 'berlin', 'milan', 'florence', 
+                'cambridge', 'oxford', 'manchester', 'birmingham', 'bristol',
+                'newcastle', 'plymouth', 'richmond', 'kingston', 'franklin'
+            ];
+            
+            if (commonCities.includes(city.toLowerCase().trim())) {
+                console.log(`✅ Accepting common city name: ${city}`);
+                return true;
+            }
+
+            const prompt = `Please verify if "${city}" is a valid city name that exists anywhere in the world. 
+            
+Accept cities even if the name is ambiguous (like "York" which could be York, England or refer to New York). 
+If it's a real place that people could visit for tourism, respond with "YES".
+Only respond with "NO" if it's clearly not a real city or place name.
+
+Respond with only "YES" or "NO".`;
             const sessionId = `city-verification-${Date.now()}`;
 
             const response = await this.invokeAgent(prompt, sessionId);
