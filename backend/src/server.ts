@@ -22,9 +22,39 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS configuration
+// CORS configuration - allow multiple origins for development
+const allowedOrigins = [
+  config.frontendUrl,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://192.168.8.62:3000', // Current network IP
+  // Allow any local network IP for development
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,
+  /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:3000$/,
+];
+
 app.use(cors({
-  origin: config.frontendUrl,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return allowedOrigin === origin;
+      } else {
+        return allowedOrigin.test(origin);
+      }
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-ID'],
@@ -69,9 +99,10 @@ app.use(errorHandler);
 
 // Only start server if not in test environment
 if (process.env.NODE_ENV !== 'test') {
-  const server = app.listen(config.port, () => {
+  const server = app.listen(config.port, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`);
     console.log(`📍 Health check available at http://localhost:${config.port}/health`);
+    console.log(`🌐 Network access available at http://192.168.1.145:${config.port}/health`);
   });
 
   // Graceful shutdown
