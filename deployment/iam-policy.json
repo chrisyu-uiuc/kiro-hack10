@@ -1,0 +1,27 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BedrockAgentAccess",
+            "Effect": "Allow",
+            "Action": [
+                "bedrock:InvokeAgent"
+            ],
+            "Resource": [
+                "arn:aws:bedrock:us-east-1:*:agent/BTATPBP5VG",
+                "arn:aws:bedrock:us-east-1:*:agent-alias/BTATPBP5VG/JFTVDFJYFF"
+            ]
+        },
+        {
+            "Sid": "CloudWatchLogs",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+            ],
+            "Resource": "arn:aws:logs:*:*:*"
+        }
+    ]
+}
