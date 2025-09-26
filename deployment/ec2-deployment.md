@@ -23,9 +23,9 @@ Deploy your Travel Itinerary Generator on AWS EC2 with:
 
 ### 1.1 Create EC2 Instance
 ```bash
-# Launch Ubuntu 22.04 LTS instance
+# Launch Ubuntu 24.04 LTS instance
 aws ec2 run-instances \
-  --image-id ami-0c02fb55956c7d316 \
+  --image-id ami-0e86e20dae90b2c6a \
   --instance-type t3.small \
   --key-name your-key-pair \
   --security-group-ids sg-xxxxxxxxx \
@@ -57,18 +57,21 @@ ssh -i your-key.pem ubuntu@your-elastic-ip
 ### 2.2 Update System
 ```bash
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl wget git unzip
+sudo apt install -y curl wget git unzip build-essential
 ```
 
 ### 2.3 Install Node.js
 ```bash
-# Install Node.js 18.x
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+# Install Node.js 20.x (LTS for Ubuntu 24.04)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
 # Verify installation
 node --version
 npm --version
+
+# Alternative: Install via snap (Ubuntu 24.04 preferred method)
+# sudo snap install node --classic
 ```
 
 ### 2.4 Install PM2
@@ -231,7 +234,15 @@ sudo nginx -t
 
 ### 5.1 Install Certbot
 ```bash
-sudo apt install -y certbot python3-certbot-nginx
+# Ubuntu 24.04 uses snapd for certbot installation
+sudo snap install core; sudo snap refresh core
+sudo snap install --classic certbot
+
+# Create symlink for system-wide access
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+# Alternative: Traditional apt method (still works)
+# sudo apt install -y certbot python3-certbot-nginx
 ```
 
 ### 5.2 Obtain SSL Certificate
@@ -285,8 +296,15 @@ aws route53 change-resource-record-sets --hosted-zone-id Z1234567890 --change-ba
 
 ### 7.1 Install CloudWatch Agent
 ```bash
+# Download and install CloudWatch agent for Ubuntu 24.04
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 sudo dpkg -i amazon-cloudwatch-agent.deb
+
+# Fix any dependency issues if they occur
+sudo apt-get install -f
+
+# Alternative: Install via snap
+# sudo snap install amazon-cloudwatch-agent
 ```
 
 ### 7.2 Configure CloudWatch Agent

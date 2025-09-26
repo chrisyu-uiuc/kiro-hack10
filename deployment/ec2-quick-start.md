@@ -5,7 +5,7 @@
 ### Step 1: Launch EC2 Instance
 1. **Go to AWS EC2 Console**
 2. **Launch Instance**:
-   - AMI: Ubuntu Server 22.04 LTS
+   - AMI: Ubuntu Server 24.04 LTS
    - Instance Type: t3.small (or t3.micro for testing)
    - Key Pair: Create or select existing
    - Security Group: Allow SSH (22), HTTP (80), HTTPS (443)

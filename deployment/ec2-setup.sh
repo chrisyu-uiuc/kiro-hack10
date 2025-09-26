@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # EC2 Setup Script for Travel Itinerary Generator
-# Run this script on a fresh Ubuntu 22.04 EC2 instance
+# Run this script on a fresh Ubuntu 24.04 EC2 instance
 
 set -e
 
@@ -17,12 +17,15 @@ NC='\033[0m' # No Color
 # Update system
 echo -e "${YELLOW}📦 Updating system packages...${NC}"
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl wget git unzip htop
+sudo apt install -y curl wget git unzip htop build-essential
 
-# Install Node.js 18.x
+# Install Node.js 20.x (LTS for Ubuntu 24.04)
 echo -e "${YELLOW}📦 Installing Node.js...${NC}"
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
+
+# Alternative method using snap (commented out)
+# sudo snap install node --classic
 
 echo -e "${GREEN}✅ Node.js $(node --version) installed${NC}"
 echo -e "${GREEN}✅ NPM $(npm --version) installed${NC}"
@@ -39,9 +42,14 @@ sudo systemctl start nginx
 
 echo -e "${GREEN}✅ Nginx installed and started${NC}"
 
-# Install Certbot for SSL
+# Install Certbot for SSL (Ubuntu 24.04 method)
 echo -e "${YELLOW}📦 Installing Certbot...${NC}"
-sudo apt install -y certbot python3-certbot-nginx
+sudo snap install core; sudo snap refresh core
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+# Alternative: Traditional apt method
+# sudo apt install -y certbot python3-certbot-nginx
 
 # Create application directory
 echo -e "${YELLOW}📁 Setting up application directory...${NC}"
@@ -172,6 +180,7 @@ echo -e "${GREEN}✅ SSL certificate configured${NC}"
 echo -e "${YELLOW}📊 Installing CloudWatch agent...${NC}"
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 sudo dpkg -i amazon-cloudwatch-agent.deb
+sudo apt-get install -f  # Fix any dependency issues
 rm amazon-cloudwatch-agent.deb
 
 # Setup firewall
