@@ -1,74 +1,105 @@
 # Project Structure
 
 ## Workspace Organization
+
 This is a monorepo with npm workspaces containing separate frontend and backend applications.
 
 ```
 travel-itinerary-generator/
 ├── frontend/                 # React application
-├── backend/                  # Express API server
-├── package.json             # Root workspace configuration
-└── .kiro/                   # Kiro IDE configuration
+├── backend/                  # Express.js API server
+├── deployment/               # Deployment scripts and guides
+├── .kiro/                    # Kiro IDE configuration
+└── package.json              # Root workspace configuration
 ```
 
 ## Frontend Structure (`frontend/`)
+
 ```
 frontend/
 ├── src/
-│   ├── components/          # React components (5 components)
-│   │   ├── CityInput.tsx    # Step 1: City input form
-│   │   ├── SpotSelection.tsx # Step 2: Spot selection interface
-│   │   ├── ItineraryDisplay.tsx # Step 3: Final itinerary
-│   │   ├── LoadingSpinner.tsx # Loading states
-│   │   └── ErrorBoundary.tsx # Error handling
-│   ├── hooks/               # Custom React hooks
-│   │   └── useAppState.ts   # Global state management
-│   ├── services/            # API client services
-│   │   └── api.ts           # Axios-based API client
+│   ├── components/          # React components (PascalCase)
+│   │   ├── CityInput.tsx
+│   │   ├── SpotSelection.tsx
+│   │   ├── ItineraryDisplay.tsx
+│   │   ├── LoadingSpinner.tsx
+│   │   └── ErrorBoundary.tsx
+│   ├── hooks/               # Custom React hooks (camelCase)
+│   │   └── useAppState.ts
+│   ├── services/            # API and external service calls
+│   │   └── api.ts
 │   ├── types/               # TypeScript type definitions
-│   └── main.tsx             # Application entry point
+│   │   └── index.ts
+│   ├── App.tsx              # Main application component
+│   ├── main.tsx             # Application entry point
+│   └── index.css            # Global styles
 ├── public/                  # Static assets
-└── dist/                    # Build output
+├── .env.example             # Environment template
+└── package.json
 ```
 
 ## Backend Structure (`backend/`)
+
 ```
 backend/
 ├── src/
-│   ├── routes/              # API endpoints (4 routes)
-│   │   └── cityRoutes.ts    # City verification and itinerary endpoints
-│   ├── services/            # Business logic
-│   │   └── BedrockAgentService.ts # AWS Bedrock integration
+│   ├── routes/              # Express route handlers
+│   ├── services/            # Business logic and external integrations
+│   │   ├── BedrockAgentService.ts
+│   │   └── index.ts
 │   ├── middleware/          # Express middleware
-│   │   ├── errorHandler.ts  # Global error handling
-│   │   ├── requestLogger.ts # Request logging
-│   │   └── sessionStorage.ts # Session management
-│   ├── config/              # Configuration
-│   ├── types/               # TypeScript definitions
-│   └── __tests__/           # Test files (81 tests)
-├── dist/                    # Build output
-└── server.ts                # Application entry point
+│   │   ├── errorHandler.ts
+│   │   ├── requestLogger.ts
+│   │   └── sessionStorage.ts
+│   ├── config/              # Configuration management
+│   │   └── index.ts
+│   ├── types/               # TypeScript type definitions
+│   │   └── express.d.ts     # Express type extensions
+│   └── server.ts            # Application entry point
+├── .env.example             # Environment template
+└── package.json
 ```
 
 ## Naming Conventions
-- **Files**: camelCase for TypeScript files, PascalCase for React components
-- **Directories**: lowercase with hyphens for multi-word names
-- **Components**: PascalCase, descriptive names reflecting functionality
-- **Services**: PascalCase with "Service" suffix
-- **Types**: PascalCase interfaces, camelCase for type aliases
+
+### Files & Directories
+- **Components**: PascalCase (e.g., `CityInput.tsx`)
+- **Hooks**: camelCase with "use" prefix (e.g., `useAppState.ts`)
+- **Services**: PascalCase with "Service" suffix (e.g., `BedrockAgentService.ts`)
+- **Middleware**: camelCase (e.g., `errorHandler.ts`)
+- **Types**: camelCase for files, PascalCase for interfaces
+
+### Code
+- **Interfaces**: PascalCase (e.g., `AppState`, `ApiResponse`)
+- **Variables/Functions**: camelCase
+- **Constants**: UPPER_SNAKE_CASE
+- **Components**: PascalCase
 
 ## Path Mapping
-Both frontend and backend use TypeScript path mapping:
-- `@/*` - src directory root
-- `@/components/*` - components directory (frontend)
-- `@/services/*` - services directory
-- `@/types/*` - types directory
-- `@/middleware/*` - middleware directory (backend)
-- `@/routes/*` - routes directory (backend)
 
-## File Organization Principles
-- Group by feature/domain rather than file type
-- Keep related files close together
-- Use index files for clean imports
-- Separate concerns: components, services, types
-- Co-locate tests with source files when possible
+Both frontend and backend use TypeScript path mapping:
+- `@/*` maps to `src/*`
+- `@/components/*` maps to `src/components/*` (frontend)
+- `@/services/*` maps to `src/services/*`
+- `@/types/*` maps to `src/types/*`
+
+## Key Architectural Patterns
+
+### Frontend
+- **Component-based architecture** with functional components
+- **Custom hooks** for state management (no external state library)
+- **Route-based navigation** with protected routes
+- **Error boundaries** for graceful error handling
+
+### Backend
+- **Layered architecture**: Routes → Services → External APIs
+- **Middleware pipeline**: Security → CORS → Logging → Session → Routes → Error handling
+- **Session-based state** stored in memory (suitable for single-instance deployment)
+- **Flexible CORS** configuration for multi-environment support
+
+## Import Conventions
+
+- Use ES modules (`import/export`)
+- Prefer named exports over default exports for utilities
+- Use default exports for React components
+- Always include `.js` extension in backend imports (ES modules requirement)

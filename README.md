@@ -222,16 +222,6 @@ Both projects use TypeScript path mapping for clean imports:
 - `@/middleware/*` - middleware directory (backend)
 - `@/routes/*` - routes directory (backend)
 
-## 🔒 Security
-
-This application handles AWS credentials and user data. Please review `SECURITY.md` for important security guidelines and best practices.
-
-Key security considerations:
-- Never commit AWS credentials to version control
-- Use environment variables for all sensitive configuration
-- Keep dependencies updated with `npm audit`
-- Follow deployment security guidelines in production
-
 ## 🤝 Contributing
 
 1. Follow the established naming conventions (camelCase files, PascalCase components)

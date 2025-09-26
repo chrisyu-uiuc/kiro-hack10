@@ -25,7 +25,27 @@ VITE_NODE_ENV=production
 
 ## Quick Deploy Options
 
-### 1. Vercel + Railway (Recommended for MVP)
+### 1. AWS EC2 (Recommended for Full Control)
+
+#### Automated Setup (Ubuntu 24.04 LTS):
+```bash
+# On your EC2 instance
+wget https://raw.githubusercontent.com/your-username/your-repo/main/deployment/ec2-setup.sh
+chmod +x ec2-setup.sh
+./ec2-setup.sh
+```
+
+This script automatically:
+- Installs Node.js 20.x, PM2, Nginx, and Certbot
+- Clones and builds your application
+- Configures SSL certificates with Let's Encrypt
+- Sets up monitoring and security
+- Creates deployment and backup scripts
+
+#### Manual Setup:
+See `ec2-deployment.md` for detailed step-by-step instructions.
+
+### 2. Vercel + Railway (Recommended for MVP)
 
 #### Frontend (Vercel):
 1. Connect GitHub repo to Vercel
@@ -70,11 +90,12 @@ docker-compose up --build
 ## Production Considerations
 
 ### Security
-- [ ] Enable HTTPS/SSL certificates
-- [ ] Configure CORS for production domains
+- [x] Enable HTTPS/SSL certificates (automated with ec2-setup.sh)
+- [x] Configure CORS for production domains (flexible CORS configuration)
 - [ ] Secure AWS credentials (use IAM roles)
+- [x] Enable request logging (included in backend)
+- [x] Firewall configuration (UFW + fail2ban)
 - [ ] Add rate limiting
-- [ ] Enable request logging
 
 ### Performance
 - [ ] Enable gzip compression

@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "name": "Documentation Sync",
+  "description": "Listens to all TypeScript source files, configuration files, and package files in the repository. When changes are detected, triggers an AI agent to update the README.md and deployment documentation to reflect the current state of the codebase.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered",
+    "patterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx",
+      "**/package.json",
+      "**/tsconfig.json",
+      "**/vite.config.ts",
+      "**/vitest.config.ts",
+      "**/.eslintrc.cjs",
+      "**/README.md",
+      "**/*.sh"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Source code or configuration files have been modified in this TypeScript travel itinerary generator project. Please review the changes and update the documentation accordingly. Focus on:\n\n1. Update the main README.md if core functionality, setup instructions, or project structure has changed\n2. Update deployment documentation in the /deployment folder if deployment-related files were modified\n3. Update any component-specific README files if relevant modules were changed\n4. Ensure all documentation accurately reflects the current codebase state, including new features, API changes, or configuration updates\n5. Maintain consistency with the existing documentation style and structure\n\nPlease analyze what changed and provide appropriate documentation updates."
+  }
+}

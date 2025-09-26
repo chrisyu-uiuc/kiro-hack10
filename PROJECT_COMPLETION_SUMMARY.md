@@ -31,6 +31,7 @@ All 15 planned tasks have been successfully implemented and tested. The Travel I
 
 ## 🚀 How to Run
 
+### Development
 1. **Install dependencies:**
    ```bash
    npm run install:all
@@ -43,9 +44,20 @@ All 15 planned tasks have been successfully implemented and tested. The Travel I
 3. **Start the application:**
    ```bash
    npm run dev
+   # Or use the enhanced restart script:
+   ./restart-servers.sh
    ```
    - Backend: http://localhost:3001
    - Frontend: http://localhost:3000
+
+### Production Deployment
+For AWS EC2 deployment with Ubuntu 24.04 LTS:
+```bash
+# Automated setup on EC2 instance
+wget https://raw.githubusercontent.com/your-username/your-repo/main/deployment/ec2-setup.sh
+chmod +x ec2-setup.sh
+./ec2-setup.sh
+```
 
 ## 🧪 Testing
 
@@ -88,10 +100,13 @@ travel-itinerary-generator/
 - **Robust Error Handling**: Graceful fallbacks for all failure scenarios
 - **Session Persistence**: User data maintained across navigation
 - **Type Safety**: Full TypeScript implementation
-- **Security**: Input validation, CORS, security headers
+- **Security**: Input validation, flexible CORS, security headers, firewall configuration
 - **Performance**: Optimized API calls and state management
 - **Accessibility**: Semantic HTML and keyboard navigation
 - **Development Experience**: Hot reload, comprehensive logging, detailed error messages
+- **Deployment Ready**: Automated EC2 setup with Ubuntu 24.04 LTS support
+- **Network Flexibility**: Supports local development, EC2 deployment, and custom domains
+- **Server Management**: Automated restart and stop scripts for development
 
 ## 🌟 Key Achievements
 

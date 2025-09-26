@@ -69,6 +69,25 @@ npm install
 npm run dev
 ```
 
+### Server Management Scripts
+
+For easier server management, use the provided scripts:
+
+```bash
+# Restart both servers (kills existing processes and starts fresh)
+./restart-servers.sh
+
+# Stop all servers
+./stop-servers.sh
+```
+
+These scripts automatically:
+- Kill any processes running on ports 3000 and 3001
+- Build the backend TypeScript code
+- Start backend and test health endpoint
+- Start frontend development server
+- Provide network access information
+
 ## Testing
 
 Run backend tests:
@@ -119,6 +138,7 @@ Make sure your AWS credentials have the necessary permissions:
 ### Common Issues
 
 1. **Port already in use**:
+   - Use `./stop-servers.sh` to kill existing processes
    - Backend (3001): Change `PORT` in `backend/.env`
    - Frontend (3000): Change port in `frontend/vite.config.ts`
 
@@ -127,12 +147,14 @@ Make sure your AWS credentials have the necessary permissions:
    - Check AWS CLI configuration: `aws configure list`
 
 3. **CORS errors**:
+   - The backend includes flexible CORS configuration for development
+   - For EC2 deployment issues, run `deployment/fix-cors-ec2.sh`
    - Ensure `FRONTEND_URL` in `backend/.env` matches your frontend URL
-   - Check that both servers are running
 
 4. **Build errors**:
    - Run `npm run type-check` to identify TypeScript issues
    - Ensure all dependencies are installed: `npm run install:all`
+   - Use `./restart-servers.sh` for a clean restart with build
 
 ### Development Tips
 
