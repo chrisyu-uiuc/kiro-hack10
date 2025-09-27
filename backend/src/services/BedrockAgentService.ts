@@ -94,18 +94,6 @@ export class BedrockAgentService {
      */
     async verifyCityExists(city: string): Promise<boolean> {
         try {
-            // Common ambiguous city names that should be accepted
-            const commonCities = [
-                'york', 'paris', 'london', 'berlin', 'milan', 'florence', 
-                'cambridge', 'oxford', 'manchester', 'birmingham', 'bristol',
-                'newcastle', 'plymouth', 'richmond', 'kingston', 'franklin'
-            ];
-            
-            if (commonCities.includes(city.toLowerCase().trim())) {
-                console.log(`✅ Accepting common city name: ${city}`);
-                return true;
-            }
-
             const prompt = `Please verify if "${city}" is a valid city name that exists anywhere in the world. 
             
 Accept cities even if the name is ambiguous (like "York" which could be York, England or refer to New York). 
@@ -117,13 +105,53 @@ Respond with only "YES" or "NO".`;
 
             const response = await this.invokeAgent(prompt, sessionId);
 
+            // Log the actual response for debugging
+            console.log(`🔍 Bedrock Agent response for "${city}":`, JSON.stringify(response));
+
             // Parse the response to determine if city is valid
             const normalizedResponse = response.toUpperCase().trim();
-            return normalizedResponse.includes('YES') || normalizedResponse.startsWith('YES');
+            
+            // Check for positive indicators
+            const positiveIndicators = ['YES', 'VALID', 'EXISTS', 'REAL', 'TRUE'];
+            const negativeIndicators = ['NO', 'INVALID', 'NOT', 'FALSE', 'FAKE'];
+            
+            const hasPositive = positiveIndicators.some(indicator => normalizedResponse.includes(indicator));
+            const hasNegative = negativeIndicators.some(indicator => normalizedResponse.includes(indicator));
+            
+            // If we have positive indicators and no negative ones, accept it
+            const isValid = hasPositive && !hasNegative;
+            
+            console.log(`🔍 Normalized response: "${normalizedResponse}"`);
+            console.log(`🔍 Has positive: ${hasPositive}, Has negative: ${hasNegative}, Valid: ${isValid}`);
+            return isValid;
         } catch (error) {
-            console.error('Error verifying city:', error);
-            throw new Error(`Failed to verify city: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error('Error verifying city with Bedrock Agent:', error);
+            
+            // Fallback: Use basic validation when Bedrock Agent is unavailable
+            console.log(`⚠️ Bedrock Agent unavailable, using fallback validation for: ${city}`);
+            return this.fallbackCityValidation(city);
         }
+    }
+
+    /**
+     * Fallback city validation when Bedrock Agent is unavailable
+     */
+    private fallbackCityValidation(city: string): boolean {
+        const trimmedCity = city.toLowerCase().trim();
+        
+        // Reject obviously invalid inputs
+        if (trimmedCity.length < 2) return false;
+        if (trimmedCity.length > 50) return false;
+        if (!/^[a-zA-Z\s\-'.,]+$/.test(trimmedCity)) return false;
+        
+        // Reject common non-city words
+        const invalidWords = ['test', 'hello', 'world', 'city', 'town', 'place', 'location', 'asdf', 'qwerty'];
+        if (invalidWords.includes(trimmedCity)) return false;
+        
+        // Accept anything else that looks like a reasonable city name
+        // This is permissive by design - better to accept a questionable city than reject a valid one
+        console.log(`✅ Fallback validation accepting: ${city}`);
+        return true;
     }
 
     /**
@@ -282,14 +310,14 @@ IMPORTANT: Your response must be ONLY valid JSON in this exact format:
 Do not include any text before or after the JSON.`;
 
             let response: string;
-            
+
             try {
                 // Try the enhanced prompt first
                 response = await this.invokeAgent(prompt, sessionId);
                 console.log('🔍 Raw Bedrock Agent Itinerary Response (Enhanced):', response);
             } catch (enhancedError) {
                 console.warn('⚠️ Enhanced prompt failed, falling back to basic prompt:', enhancedError);
-                
+
                 // Fallback to simpler prompt if enhanced one fails
                 const basicPrompt = `You must respond with ONLY a valid JSON object. Create a travel itinerary for these spots:
       
@@ -311,7 +339,7 @@ IMPORTANT: Your response must be ONLY valid JSON in this exact format:
 }
 
 Do not include any text before or after the JSON.`;
-                
+
                 try {
                     response = await this.invokeAgent(basicPrompt, sessionId);
                     console.log('🔍 Raw Bedrock Agent Itinerary Response (Basic):', response);
@@ -369,13 +397,13 @@ Do not include any text before or after the JSON.`;
             // More realistic timing with proper durations based on category
             let duration = '1.5 hours';
             let startTime = 9 + (index * 2);
-            
+
             // Adjust duration based on spot category
             if (spot.category === 'Museum') duration = '2-3 hours';
             else if (spot.category === 'Park') duration = '1-2 hours';
             else if (spot.category === 'Restaurant') duration = '1 hour';
             else if (spot.category === 'Viewpoint') duration = '45 minutes';
-            
+
             // Add lunch break after 2-3 spots
             if (index === 2) {
                 startTime = 12; // Lunch time
@@ -383,10 +411,10 @@ Do not include any text before or after the JSON.`;
             } else if (index > 2) {
                 startTime = 13 + ((index - 3) * 2); // Resume after lunch
             }
-            
+
             const endTime = startTime + (duration.includes('2-3') ? 2.5 : duration.includes('1-2') ? 1.5 : 1);
             const timeString = `${startTime}:00 ${startTime < 12 ? 'AM' : 'PM'} - ${Math.floor(endTime)}:${endTime % 1 === 0.5 ? '30' : '00'} ${endTime < 12 ? 'AM' : 'PM'}`;
-            
+
             return {
                 time: timeString,
                 spot: spot.name,
