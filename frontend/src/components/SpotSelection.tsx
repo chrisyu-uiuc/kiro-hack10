@@ -12,6 +12,7 @@ function SpotSelection({
   setLoading, 
   setError, 
   setSpots,
+  addMoreSpots,
   toggleSpotSelection,
   getSelectedSpots,
   goToStep 
@@ -35,6 +36,34 @@ function SpotSelection({
       setSpots(result.spots);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to generate spots. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMoreSpots = async () => {
+    if (!state.sessionId) return;
+
+    setLoading(true);
+    
+    try {
+      const result = await ApiService.loadMoreSpots(state.sessionId);
+      if (result.spots.length > 0) {
+        addMoreSpots(result.spots);
+        // Clear any previous error messages
+        if (state.error) {
+          setError(null);
+        }
+      } else {
+        // Handle different "no more spots" scenarios
+        if (result.message) {
+          setError(result.message);
+        } else {
+          setError('No new spots found. You may have seen all available recommendations.');
+        }
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to load more spots. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -88,15 +117,22 @@ function SpotSelection({
   }
 
   const selectedCount = state.selectedSpotIds.length;
+  const totalSpots = state.spots.length;
+  const canLoadMore = totalSpots < 40 && totalSpots > 0;
 
   return (
     <div className="step-container">
       <h2>🎯 Select Your Spots in {state.city}</h2>
       <p>
-        Choose the places you'd like to visit. We've generated {state.spots.length} recommendations for you.
+        Choose the places you'd like to visit. We've generated {totalSpots} recommendations for you.
         {selectedCount > 0 && (
           <span style={{ color: '#646cff', fontWeight: 'bold' }}>
             {' '}({selectedCount} selected)
+          </span>
+        )}
+        {totalSpots >= 40 && (
+          <span style={{ color: '#f39c12', fontWeight: 'bold', marginLeft: '8px' }}>
+            (Maximum reached!)
           </span>
         )}
       </p>
@@ -126,6 +162,62 @@ function SpotSelection({
           </div>
         ))}
       </div>
+
+      {canLoadMore && (
+        <div style={{ textAlign: 'center', margin: '20px 0' }}>
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={loadMoreSpots}
+            disabled={state.loading}
+            style={{ 
+              padding: '12px 24px',
+              fontSize: '16px',
+              borderRadius: '8px',
+              border: '2px solid #646cff',
+              backgroundColor: 'transparent',
+              color: '#646cff',
+              cursor: state.loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              opacity: state.loading ? 0.6 : 1
+            }}
+          >
+            {state.loading ? (
+              <>
+                <span className="loading" style={{ width: '16px', height: '16px', marginRight: '8px' }}></span>
+                Loading More...
+              </>
+            ) : (
+              `🔄 Load More Spots (${totalSpots}/40)`
+            )}
+          </button>
+          <div style={{ 
+            fontSize: '14px', 
+            color: '#666', 
+            marginTop: '8px' 
+          }}>
+            Load 10 more spots • Up to 40 total
+          </div>
+        </div>
+      )}
+
+      {totalSpots >= 40 && (
+        <div style={{ 
+          textAlign: 'center', 
+          margin: '20px 0',
+          padding: '16px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          border: '1px solid #e9ecef'
+        }}>
+          <div style={{ color: '#f39c12', fontWeight: 'bold', fontSize: '16px' }}>
+            🎉 Maximum spots reached!
+          </div>
+          <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
+            You have 40 amazing spots to choose from. That's plenty for an incredible trip!
+          </div>
+        </div>
+      )}
 
       <div className="navigation-buttons">
         <button 

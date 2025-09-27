@@ -90,6 +90,29 @@ export class ApiService {
   }
 
   /**
+   * Load more spots for the current session
+   */
+  static async loadMoreSpots(sessionId: string): Promise<SpotGenerationResponse> {
+    try {
+      const response: AxiosResponse<ApiResponse<SpotGenerationResponse>> = await apiClient.post(
+        '/load-more-spots',
+        { sessionId }
+      );
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error?.message || 'Failed to load more spots');
+      }
+
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error.message);
+      }
+      throw new Error('Network error. Please check your connection and try again.');
+    }
+  }
+
+  /**
    * Store selected spots
    */
   static async storeSelections(

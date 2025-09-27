@@ -163,6 +163,122 @@ router.post('/generate-spots', async (req: Request, res: Response, next: NextFun
 });
 
 /**
+ * POST /api/load-more-spots
+ * Generates additional spots for a city, avoiding duplicates from existing spots
+ */
+router.post('/load-more-spots', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Validate input
+    const sessionError = validateSessionId(req.body.sessionId);
+    if (sessionError) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: sessionError,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const { sessionId } = req.body;
+
+    // Get session
+    const session = sessionStorage.getSession(sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SESSION_NOT_FOUND',
+          message: 'Session not found. Please start over.',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (!session.city) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'NO_CITY_SET',
+          message: 'No city set in session. Please start over.',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Check if we've reached the maximum number of spots (40)
+    const currentSpotCount = session.allSpots?.length || 0;
+    if (currentSpotCount >= 40) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          spots: [],
+          sessionId,
+          city: session.city,
+          totalSpots: currentSpotCount,
+          reachedLimit: true,
+          message: `You've reached the maximum of 40 spots for ${session.city}. That should be plenty for an amazing trip!`,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Get existing spot names to avoid duplicates
+    const existingSpotNames = session.allSpots?.map(spot => spot.name.toLowerCase()) || [];
+
+    // Generate more spots using Bedrock Agent with exclusion context
+    const newSpots = await bedrockService.generateMoreSpots(session.city, sessionId, existingSpotNames);
+
+    // Filter out any duplicates that might have slipped through
+    const filteredNewSpots = newSpots.filter(newSpot => 
+      !existingSpotNames.includes(newSpot.name.toLowerCase())
+    );
+
+    if (filteredNewSpots.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          spots: [],
+          sessionId,
+          city: session.city,
+          totalSpots: currentSpotCount,
+          noMoreSpots: true,
+          message: 'No new unique spots found. You may have seen all available recommendations for this city.',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Append new spots to existing ones in session
+    const updatedAllSpots = [...(session.allSpots || []), ...filteredNewSpots];
+    sessionStorage.updateSession(sessionId, { allSpots: updatedAllSpots });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        spots: filteredNewSpots,
+        sessionId,
+        city: session.city,
+        totalSpots: updatedAllSpots.length,
+        message: `Generated ${filteredNewSpots.length} new spots for ${session.city}`,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error in loading more spots:', error);
+
+    // Pass error to error handling middleware
+    return next({
+      status: 500,
+      code: 'LOAD_MORE_SPOTS_ERROR',
+      message: 'Failed to load more spots. Please try again later.',
+      originalError: error,
+    });
+  }
+});
+
+/**
  * POST /api/store-selections
  * Stores user's selected spots in session storage
  */

@@ -228,6 +228,171 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
     }
 
     /**
+     * Generate additional spots for a city, avoiding duplicates from existing spots
+     */
+    async generateMoreSpots(city: string, sessionId: string, existingSpotNames: string[]): Promise<Spot[]> {
+        try {
+            const excludeText = existingSpotNames.length > 0 
+                ? `\n\nIMPORTANT: Do NOT include these spots that have already been suggested: ${existingSpotNames.join(', ')}`
+                : '';
+
+            const prompt = `You must respond with ONLY a valid JSON array. Generate exactly 10 NEW tourist spots for ${city} that are different from any previously suggested spots.${excludeText}
+
+Focus on lesser-known gems, local favorites, hidden spots, alternative attractions, or different categories than what might have been suggested before. Include diverse options like local markets, scenic walks, cultural centers, food districts, artisan workshops, or unique local experiences.
+
+IMPORTANT: Your response must be ONLY valid JSON in this exact format:
+[
+  {
+    "id": "spot-1",
+    "name": "Spot Name",
+    "category": "Museum",
+    "location": "District Name",
+    "description": "Brief description (max 100 characters)"
+  }
+]
+
+Do not include any text before or after the JSON. Keep descriptions short. Categories should be: Museum, Park, Restaurant, Historical Site, Shopping, Entertainment, Religious Site, Market, Viewpoint, Beach, Cafe, Gallery, or Local Experience.`;
+
+            const response = await this.invokeAgent(prompt, sessionId);
+
+            console.log('🔍 Raw Bedrock Agent More Spots Response:', response);
+
+            // Check if the response indicates an error or inability to help
+            if (response.toLowerCase().includes('sorry') || response.toLowerCase().includes('cannot') || response.toLowerCase().includes('unable')) {
+                console.error('❌ Bedrock Agent returned an error response for more spots:', response);
+                return this.getFallbackMoreSpots(city, existingSpotNames);
+            }
+
+            // Parse the JSON response
+            try {
+                // Extract JSON from the response if it's wrapped in text
+                let jsonMatch = response.match(/\[[\s\S]*\]/);
+                let jsonString = jsonMatch ? jsonMatch[0] : response;
+
+                console.log('🔍 Extracted More Spots JSON string length:', jsonString.length);
+
+                // Handle truncated JSON by trying to fix it
+                if (!jsonString.endsWith(']')) {
+                    console.log('⚠️ More spots JSON appears truncated, attempting to fix...');
+
+                    // Find the last complete object
+                    const lastCompleteObject = jsonString.lastIndexOf('},');
+                    if (lastCompleteObject > 0) {
+                        jsonString = jsonString.substring(0, lastCompleteObject + 1) + '\n]';
+                        console.log('🔧 Fixed truncated more spots JSON, new length:', jsonString.length);
+                    }
+                }
+
+                const spots = JSON.parse(jsonString);
+
+                // Validate and ensure each spot has required fields, and generate unique IDs
+                return spots.map((spot: any, index: number) => ({
+                    id: spot.id || `more-spot-${Date.now()}-${index + 1}`,
+                    name: spot.name || 'Unknown Spot',
+                    category: spot.category || 'Attraction',
+                    location: spot.location || 'City Center',
+                    description: spot.description || 'No description available',
+                }));
+            } catch (parseError) {
+                console.error('Error parsing more spots JSON:', parseError);
+                console.log('🔍 Attempting to use fallback more spots for:', city);
+                return this.getFallbackMoreSpots(city, existingSpotNames);
+            }
+        } catch (error) {
+            console.error('Error generating more spots:', error);
+            console.log('🔍 Using fallback more spots due to error for:', city);
+            return this.getFallbackMoreSpots(city, existingSpotNames);
+        }
+    }
+
+    /**
+     * Provide fallback additional spots when Bedrock Agent fails
+     */
+    private getFallbackMoreSpots(city: string, existingSpotNames: string[]): Spot[] {
+        const timestamp = Date.now();
+        const fallbackSpots = [
+            {
+                id: `more-spot-${timestamp}-1`,
+                name: `${city} Local Cafe District`,
+                category: 'Cafe',
+                location: 'Bohemian Quarter',
+                description: `Discover charming local cafes and coffee culture in ${city}'s artistic neighborhood.`
+            },
+            {
+                id: `more-spot-${timestamp}-2`,
+                name: `${city} Street Art Gallery`,
+                category: 'Gallery',
+                location: 'Arts District',
+                description: `Explore vibrant street art and local galleries showcasing ${city}'s creative scene.`
+            },
+            {
+                id: `more-spot-${timestamp}-3`,
+                name: `${city} Riverside Walk`,
+                category: 'Park',
+                location: 'Waterfront',
+                description: `A peaceful riverside walking path offering scenic views and local wildlife.`
+            },
+            {
+                id: `more-spot-${timestamp}-4`,
+                name: `${city} Night Market`,
+                category: 'Market',
+                location: 'Evening District',
+                description: `Experience local nightlife and street food at this bustling evening market.`
+            },
+            {
+                id: `more-spot-${timestamp}-5`,
+                name: `${city} Hidden Temple`,
+                category: 'Religious Site',
+                location: 'Quiet Quarter',
+                description: `A lesser-known spiritual site offering tranquility away from tourist crowds.`
+            },
+            {
+                id: `more-spot-${timestamp}-6`,
+                name: `${city} Artisan Workshop Quarter`,
+                category: 'Local Experience',
+                location: 'Craft District',
+                description: `Visit local artisans and craftspeople creating traditional ${city} handicrafts.`
+            },
+            {
+                id: `more-spot-${timestamp}-7`,
+                name: `${city} Scenic Overlook`,
+                category: 'Viewpoint',
+                location: 'Hillside',
+                description: `A hidden viewpoint offering panoramic views of ${city} away from crowds.`
+            },
+            {
+                id: `more-spot-${timestamp}-8`,
+                name: `${city} Food Street`,
+                category: 'Restaurant',
+                location: 'Culinary District',
+                description: `A street famous for authentic local cuisine and traditional ${city} dishes.`
+            },
+            {
+                id: `more-spot-${timestamp}-9`,
+                name: `${city} Cultural Center`,
+                category: 'Entertainment',
+                location: 'Cultural Quarter',
+                description: `Experience local performances, exhibitions, and cultural events in ${city}.`
+            },
+            {
+                id: `more-spot-${timestamp}-10`,
+                name: `${city} Botanical Gardens`,
+                category: 'Park',
+                location: 'Green District',
+                description: `Beautiful botanical gardens showcasing native plants and peaceful walking paths.`
+            }
+        ];
+
+        // Filter out any that might match existing spots (basic name matching)
+        return fallbackSpots.filter(spot => 
+            !existingSpotNames.some(existing => 
+                existing.includes(spot.name.toLowerCase()) || 
+                spot.name.toLowerCase().includes(existing)
+            )
+        );
+    }
+
+    /**
      * Provide fallback spots when Bedrock Agent fails
      */
     private getFallbackSpots(city: string): Spot[] {

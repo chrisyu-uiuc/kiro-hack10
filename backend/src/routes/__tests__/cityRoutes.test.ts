@@ -1263,4 +1263,102 @@ describe('POST /api/verify-city', () => {
       });
     });
   });
+
+  describe('POST /api/load-more-spots', () => {
+    describe('Successful load more spots', () => {
+      it('should load more spots for existing session', async () => {
+        // Arrange
+        const mockMoreSpots = [
+          { id: 'more-1', name: 'New Spot 1', category: 'Museum', location: 'District 1', description: 'A new museum' },
+          { id: 'more-2', name: 'New Spot 2', category: 'Park', location: 'District 2', description: 'A new park' }
+        ];
+        
+        const mockSession = {
+          sessionId: 'test-session',
+          city: 'Paris',
+          allSpots: [
+            { id: 'spot-1', name: 'Existing Spot', category: 'Museum', location: 'Center', description: 'Existing' }
+          ]
+        };
+
+        mockSessionStorage.getSession.mockReturnValue(mockSession);
+        mockSessionStorage.updateSession.mockReturnValue(true);
+        
+        // Mock the new generateMoreSpots method
+        const mockGenerateMoreSpots = vi.fn().mockResolvedValue(mockMoreSpots);
+        BedrockAgentService.prototype.generateMoreSpots = mockGenerateMoreSpots;
+
+        // Act
+        const response = await request(app)
+          .post('/api/load-more-spots')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.spots).toHaveLength(2);
+        expect(response.body.data.spots[0].name).toBe('New Spot 1');
+        expect(mockGenerateMoreSpots).toHaveBeenCalledWith('Paris', 'test-session', ['existing spot']);
+      });
+
+      it('should handle maximum spots reached (40 spots)', async () => {
+        // Arrange
+        const mockSession = {
+          sessionId: 'test-session',
+          city: 'Paris',
+          allSpots: new Array(40).fill(null).map((_, i) => ({
+            id: `spot-${i}`,
+            name: `Spot ${i}`,
+            category: 'Museum',
+            location: 'Center',
+            description: 'Description'
+          }))
+        };
+
+        mockSessionStorage.getSession.mockReturnValue(mockSession);
+
+        // Act
+        const response = await request(app)
+          .post('/api/load-more-spots')
+          .send({ sessionId: 'test-session' });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.spots).toHaveLength(0);
+        expect(response.body.data.reachedLimit).toBe(true);
+        expect(response.body.data.message).toContain('maximum of 40 spots');
+      });
+    });
+
+    describe('Input validation', () => {
+      it('should return validation error for missing sessionId', async () => {
+        // Act
+        const response = await request(app)
+          .post('/api/load-more-spots')
+          .send({});
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
+        expect(response.body.error.message).toBe('Session ID is required');
+      });
+
+      it('should return error for non-existent session', async () => {
+        // Arrange
+        mockSessionStorage.getSession.mockReturnValue(null);
+
+        // Act
+        const response = await request(app)
+          .post('/api/load-more-spots')
+          .send({ sessionId: 'non-existent' });
+
+        // Assert
+        expect(response.status).toBe(404);
+        expect(response.body.success).toBe(false);
+        expect(response.body.error.code).toBe('SESSION_NOT_FOUND');
+      });
+    });
+  });
 });

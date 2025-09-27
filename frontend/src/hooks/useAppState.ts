@@ -39,6 +39,13 @@ export function useAppState() {
     updateState({ spots, selectedSpotIds: [] });
   }, [updateState]);
 
+  const addMoreSpots = useCallback((newSpots: Spot[]) => {
+    setState(prev => ({
+      ...prev,
+      spots: [...prev.spots, ...newSpots]
+    }));
+  }, []);
+
   const toggleSpotSelection = useCallback((spotId: string) => {
     setState(prev => {
       const isSelected = prev.selectedSpotIds.includes(spotId);
@@ -74,6 +81,7 @@ export function useAppState() {
     setCity,
     setSessionId,
     setSpots,
+    addMoreSpots,
     toggleSpotSelection,
     setItinerary,
     goToStep,

@@ -53,6 +53,9 @@ export interface SpotGenerationResponse {
   sessionId: string;
   city: string;
   message: string;
+  totalSpots?: number;
+  reachedLimit?: boolean;
+  noMoreSpots?: boolean;
 }
 
 export interface SpotSelectionResponse {
