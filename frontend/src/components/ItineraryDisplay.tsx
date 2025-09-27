@@ -49,7 +49,10 @@ function ItineraryDisplay({
   if (state.loading && !state.itinerary) {
     return (
       <div className="step-container">
-        <LoadingSpinner message="Creating your personalized itinerary..." />
+        <LoadingSpinner 
+          type="processing" 
+          message="Crafting your perfect itinerary..." 
+        />
       </div>
     );
   }

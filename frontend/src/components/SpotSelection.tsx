@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ApiService } from '../services/api';
@@ -18,6 +18,30 @@ function SpotSelection({
   goToStep
 }: SpotSelectionProps) {
   const navigate = useNavigate();
+  const [loadingMessage, setLoadingMessage] = useState('');
+
+  // Dynamic loading messages
+  useEffect(() => {
+    if (state.loading) {
+      const messages = [
+        `Exploring ${state.city}'s hidden gems...`,
+        `Discovering local favorites in ${state.city}...`,
+        `Finding unique experiences in ${state.city}...`,
+        `Curating the best spots in ${state.city}...`,
+        `Almost ready with your ${state.city} recommendations...`
+      ];
+      
+      let messageIndex = 0;
+      setLoadingMessage(messages[0]);
+      
+      const interval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % messages.length;
+        setLoadingMessage(messages[messageIndex]);
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [state.loading, state.city]);
 
   // Load spots when component mounts
   useEffect(() => {
@@ -122,7 +146,10 @@ function SpotSelection({
   if (state.loading && state.spots.length === 0) {
     return (
       <div className="step-container">
-        <LoadingSpinner message={`Generating recommendations for ${state.city}...`} />
+        <LoadingSpinner 
+          type="discovering" 
+          message={loadingMessage || `Discovering amazing spots in ${state.city}...`} 
+        />
       </div>
     );
   }
@@ -188,17 +215,20 @@ function SpotSelection({
               fontSize: '16px',
               borderRadius: '8px',
               border: '2px solid #646cff',
-              backgroundColor: 'transparent',
-              color: '#646cff',
+              backgroundColor: state.loading ? '#f8f9fa' : 'transparent',
+              color: state.loading ? '#666' : '#646cff',
               cursor: state.loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-              opacity: state.loading ? 0.6 : 1
+              transition: 'all 0.3s ease',
+              opacity: state.loading ? 0.8 : 1,
+              minWidth: '200px'
             }}
           >
             {state.loading ? (
               <>
-                <span className="loading" style={{ width: '16px', height: '16px', marginRight: '8px' }}></span>
-                Loading More...
+                <span className="loading-icon-bounce" style={{ marginRight: '6px' }}>🔍</span>
+                <span className="loading-icon-pulse" style={{ marginRight: '6px' }}>✨</span>
+                <span className="loading-icon-bounce" style={{ marginRight: '6px' }}>🗺️</span>
+                Discovering more spots...
               </>
             ) : (
               `🔄 Load More Spots (${totalSpots}/40)`
@@ -209,7 +239,15 @@ function SpotSelection({
             color: '#666',
             marginTop: '8px'
           }}>
-            Load 10 more spots • Up to 40 total
+            {state.loading ? (
+              <span>
+                <span className="loading-icon-pulse">🌟</span>
+                {' '}Finding unique local gems...{' '}
+                <span className="loading-icon-pulse">🏛️</span>
+              </span>
+            ) : (
+              'Load 10 more spots • Up to 40 total'
+            )}
           </div>
         </div>
       )}
@@ -249,11 +287,17 @@ function SpotSelection({
           className="btn-primary"
           onClick={handleNext}
           disabled={state.loading || selectedCount === 0}
+          style={{
+            minWidth: '200px',
+            transition: 'all 0.3s ease'
+          }}
         >
           {state.loading ? (
             <>
-              <span className="loading" style={{ width: '16px', height: '16px', marginRight: '8px' }}></span>
-              Processing...
+              <span className="loading-icon-spin" style={{ marginRight: '6px' }}>⚙️</span>
+              <span className="loading-icon-bounce" style={{ marginRight: '6px' }}>📋</span>
+              <span className="loading-icon-pulse" style={{ marginRight: '6px' }}>✨</span>
+              Creating your itinerary...
             </>
           ) : (
             `Generate Itinerary (${selectedCount} spots) →`

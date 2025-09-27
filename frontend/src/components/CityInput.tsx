@@ -57,7 +57,10 @@ function CityInput({
   if (state.loading) {
     return (
       <div className="step-container">
-        <LoadingSpinner message="Verifying city..." />
+        <LoadingSpinner 
+          type="searching" 
+          message={`Verifying ${inputValue}...`} 
+        />
       </div>
     );
   }
