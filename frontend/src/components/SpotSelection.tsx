@@ -5,6 +5,8 @@ import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
 import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 import { Spot } from '../types';
+import ProgressIndicator from './ProgressIndicator';
+import SmallHeader from './SmallHeader';
 
 interface SpotSelectionProps extends ReturnType<typeof useAppState> { }
 
@@ -185,6 +187,7 @@ function SpotSelection({
 
   return (
     <div className="step-container">
+      <ProgressIndicator currentStep="spots" />
       <h2>🎯 Select Your Spots in {state.city}</h2>
       <p>
         Choose the places you'd like to visit. We've generated {totalSpots} recommendations for you.

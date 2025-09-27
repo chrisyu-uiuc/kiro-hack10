@@ -4,15 +4,17 @@ import { LoadingSpinner } from './LoadingSpinner';
 import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
 import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
+import ProgressIndicator from './ProgressIndicator';
+import SmallHeader from './SmallHeader';
 
-interface ItineraryDisplayProps extends ReturnType<typeof useAppState> {}
+interface ItineraryDisplayProps extends ReturnType<typeof useAppState> { }
 
-function ItineraryDisplay({ 
-  state, 
-  setLoading, 
-  setError, 
+function ItineraryDisplay({
+  state,
+  setLoading,
+  setError,
   setItinerary,
-  resetState 
+  resetState
 }: ItineraryDisplayProps) {
   const navigate = useNavigate();
 
@@ -30,7 +32,7 @@ function ItineraryDisplay({
     if (!state.sessionId) return;
 
     setLoading(true);
-    
+
     try {
       const result = await ApiService.generateItinerary(state.sessionId);
       setItinerary(result.itinerary);
@@ -57,9 +59,9 @@ function ItineraryDisplay({
   if (state.loading && !state.itinerary) {
     return (
       <div className="step-container">
-        <LoadingSpinner 
-          type="processing" 
-          message="Crafting your perfect itinerary..." 
+        <LoadingSpinner
+          type="processing"
+          message="Crafting your perfect itinerary..."
         />
       </div>
     );
@@ -73,15 +75,15 @@ function ItineraryDisplay({
           {state.error}
         </div>
         <div className="navigation-buttons">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-secondary"
             onClick={handleBack}
           >
             ← Back to Spots
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-primary"
             onClick={generateItinerary}
           >
@@ -97,8 +99,8 @@ function ItineraryDisplay({
       <div className="step-container">
         <h2>No itinerary available</h2>
         <p>Please go back and select some spots first.</p>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="btn-primary"
           onClick={handleBack}
         >
@@ -110,11 +112,12 @@ function ItineraryDisplay({
 
   return (
     <div className="step-container">
+      <ProgressIndicator currentStep="itinerary" />
       <h2>🗓️ {state.itinerary.title}</h2>
       <p>
         Your personalized itinerary for {state.city} • Total Duration: {state.itinerary.totalDuration}
       </p>
-      
+
       <div className="itinerary-schedule">
         {state.itinerary.schedule.map((item, index) => (
           <div key={index} className="schedule-item">
@@ -136,15 +139,15 @@ function ItineraryDisplay({
       </div>
 
       <div className="navigation-buttons">
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="btn-secondary"
           onClick={handleStartOver}
         >
           🌍 Plan Another Trip
         </button>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="btn-primary"
           onClick={() => window.print()}
         >

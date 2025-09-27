@@ -1,21 +1,30 @@
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAppState } from './hooks/useAppState';
 import CityInput from './components/CityInput';
 import SpotSelection from './components/SpotSelection';
 import ItineraryDisplay from './components/ItineraryDisplay';
+import FloatingElements from './components/FloatingElements';
+import SmallHeader from './components/SmallHeader';
 
 function App() {
   const appState = useAppState();
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
 
   return (
     <ErrorBoundary>
+      <FloatingElements />
       <div className="container">
-        <header style={{ marginBottom: '30px' }}>
-          <h1>🌍 Travel Itinerary Generator</h1>
-          <p>Create your perfect travel plan with AI-powered recommendations</p>
-        </header>
+        {isHomePage ? (
+          <div className="main-header">
+            <h1>✈️ Wanderlust AI</h1>
+            <p>Discover. Plan. Explore. Your AI-powered travel companion.</p>
+          </div>
+        ) : (
+          <SmallHeader />
+        )}
 
         <Routes>
           <Route 

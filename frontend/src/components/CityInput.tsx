@@ -4,6 +4,7 @@ import { LoadingSpinner } from './LoadingSpinner';
 import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
 import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
+import ProgressIndicator from './ProgressIndicator';
 
 interface CityInputProps extends ReturnType<typeof useAppState> {}
 
@@ -14,7 +15,7 @@ function CityInput({
   setCity, 
   setSessionId,
   setSpots,
-  goToStep 
+  goToStep
 }: CityInputProps) {
   const [inputValue, setInputValue] = useState(state.city);
   const navigate = useNavigate();
@@ -63,50 +64,50 @@ function CityInput({
     }
   };
 
-  if (state.loading) {
-    return (
-      <div className="step-container">
+  return (
+    <div className="step-container">
+      <ProgressIndicator currentStep="city" />
+      
+      {state.loading ? (
         <LoadingSpinner 
           type="searching" 
           message={`Verifying ${inputValue}...`} 
         />
-      </div>
-    );
-  }
-
-  return (
-    <div className="step-container">
-      <h2>🏙️ Where would you like to travel?</h2>
-      <p>Enter a city name to get started with your personalized travel itinerary.</p>
-      
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="city">City Name</label>
-          <input
-            id="city"
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            placeholder="e.g., Paris, Tokyo, New York"
-            disabled={state.loading}
-            autoFocus
-          />
-          {state.error && (
-            <div className="error-message">{state.error}</div>
-          )}
-        </div>
-        
-        <div className="navigation-buttons">
-          <div></div> {/* Empty div for spacing */}
-          <button 
-            type="submit" 
-            className="btn-primary"
-            disabled={state.loading || !inputValue.trim()}
-          >
-            Verify City
-          </button>
-        </div>
-      </form>
+      ) : (
+        <>
+          <h2>🏙️ Where would you like to travel?</h2>
+          <p>Enter a city name to get started with your personalized travel itinerary.</p>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="city">City Name</label>
+              <input
+                id="city"
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                placeholder="e.g., Paris, Tokyo, New York"
+                disabled={state.loading}
+                autoFocus
+              />
+              {state.error && (
+                <div className="error-message">{state.error}</div>
+              )}
+            </div>
+            
+            <div className="navigation-buttons">
+              <div></div> {/* Empty div for spacing */}
+              <button 
+                type="submit" 
+                className="btn-primary"
+                disabled={state.loading || !inputValue.trim()}
+              >
+                Verify City
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </div>
   );
 }
