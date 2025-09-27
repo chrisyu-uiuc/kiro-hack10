@@ -232,7 +232,7 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
      */
     async generateMoreSpots(city: string, sessionId: string, existingSpotNames: string[]): Promise<Spot[]> {
         try {
-            const excludeText = existingSpotNames.length > 0 
+            const excludeText = existingSpotNames.length > 0
                 ? `\n\nIMPORTANT: Do NOT include these spots that have already been suggested: ${existingSpotNames.join(', ')}`
                 : '';
 
@@ -328,7 +328,7 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
     private getFallbackMoreSpots(city: string, existingSpotNames: string[]): Spot[] {
         const timestamp = Date.now();
         const random = Math.floor(Math.random() * 1000);
-        
+
         // Create multiple sets of fallback spots to ensure variety
         const fallbackSets = [
             // Set 1: Cultural & Arts
@@ -366,18 +366,18 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
         // Select spots from different sets to ensure variety
         const selectedSpots: any[] = [];
         let setIndex = random % fallbackSets.length;
-        
+
         for (let i = 0; i < 10 && selectedSpots.length < 10; i++) {
             const currentSet = fallbackSets[setIndex % fallbackSets.length];
             const spotIndex = Math.floor(i / fallbackSets.length) % currentSet.length;
-            
+
             if (currentSet[spotIndex]) {
                 selectedSpots.push({
                     id: `fallback-${timestamp}-${i + 1}`,
                     ...currentSet[spotIndex]
                 });
             }
-            
+
             setIndex++;
         }
 
@@ -386,14 +386,14 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
             const spotName = spot.name.toLowerCase();
             return !existingSpotNames.some(existing => {
                 // Only filter if there's a very close match (exact or very similar)
-                return existing === spotName || 
-                       (existing.length > 5 && spotName.includes(existing)) ||
-                       (spotName.length > 5 && existing.includes(spotName));
+                return existing === spotName ||
+                    (existing.length > 5 && spotName.includes(existing)) ||
+                    (spotName.length > 5 && existing.includes(spotName));
             });
         });
 
         console.log(`🔍 Generated ${selectedSpots.length} fallback spots, filtered to ${filteredSpots.length} unique spots`);
-        
+
         return filteredSpots;
     }
 
