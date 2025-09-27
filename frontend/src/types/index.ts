@@ -29,6 +29,7 @@ export interface AppState {
   itinerary: Itinerary | null;
   loading: boolean;
   error: string | null;
+  noMoreSpots: boolean;
 }
 
 export interface ApiResponse<T> {

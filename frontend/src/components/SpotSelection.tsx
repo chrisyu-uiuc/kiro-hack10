@@ -5,17 +5,17 @@ import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
 import { Spot } from '../types';
 
-interface SpotSelectionProps extends ReturnType<typeof useAppState> {}
+interface SpotSelectionProps extends ReturnType<typeof useAppState> { }
 
-function SpotSelection({ 
-  state, 
-  setLoading, 
-  setError, 
+function SpotSelection({
+  state,
+  setLoading,
+  setError,
   setSpots,
   addMoreSpots,
   toggleSpotSelection,
   getSelectedSpots,
-  goToStep 
+  goToStep
 }: SpotSelectionProps) {
   const navigate = useNavigate();
 
@@ -30,7 +30,7 @@ function SpotSelection({
     if (!state.city || !state.sessionId) return;
 
     setLoading(true);
-    
+
     try {
       const result = await ApiService.generateSpots(state.city, state.sessionId);
       setSpots(result.spots);
@@ -45,11 +45,11 @@ function SpotSelection({
     if (!state.sessionId) return;
 
     setLoading(true);
-    
+
     try {
       const result = await ApiService.loadMoreSpots(state.sessionId);
       if (result.spots.length > 0) {
-        addMoreSpots(result.spots);
+        addMoreSpots(result.spots, result.noMoreSpots);
         // Clear any previous error messages
         if (state.error) {
           setError(null);
@@ -71,18 +71,18 @@ function SpotSelection({
 
   const handleNext = async () => {
     const selectedSpots = getSelectedSpots();
-    
+
     if (selectedSpots.length === 0) {
       setError('Please select at least one spot to continue.');
       return;
     }
 
     setLoading(true);
-    
+
     try {
       console.log('🔄 Storing selections:', selectedSpots.map(spot => spot.id));
       await ApiService.storeSelections(
-        selectedSpots.map(spot => spot.id), 
+        selectedSpots.map(spot => spot.id),
         state.sessionId
       );
       console.log('✅ Selections stored, navigating to itinerary');
@@ -118,7 +118,7 @@ function SpotSelection({
 
   const selectedCount = state.selectedSpotIds.length;
   const totalSpots = state.spots.length;
-  const canLoadMore = totalSpots < 40 && totalSpots > 0;
+  const canLoadMore = totalSpots < 40 && totalSpots > 0 && !state.noMoreSpots;
 
   return (
     <div className="step-container">
@@ -136,7 +136,7 @@ function SpotSelection({
           </span>
         )}
       </p>
-      
+
       {state.error && (
         <div className="error-message" style={{ marginBottom: '20px' }}>
           {state.error}
@@ -165,12 +165,12 @@ function SpotSelection({
 
       {canLoadMore && (
         <div style={{ textAlign: 'center', margin: '20px 0' }}>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-secondary"
             onClick={loadMoreSpots}
             disabled={state.loading}
-            style={{ 
+            style={{
               padding: '12px 24px',
               fontSize: '16px',
               borderRadius: '8px',
@@ -191,19 +191,19 @@ function SpotSelection({
               `🔄 Load More Spots (${totalSpots}/40)`
             )}
           </button>
-          <div style={{ 
-            fontSize: '14px', 
-            color: '#666', 
-            marginTop: '8px' 
+          <div style={{
+            fontSize: '14px',
+            color: '#666',
+            marginTop: '8px'
           }}>
             Load 10 more spots • Up to 40 total
           </div>
         </div>
       )}
 
-      {totalSpots >= 40 && (
-        <div style={{ 
-          textAlign: 'center', 
+      {(totalSpots >= 40 || state.noMoreSpots) && (
+        <div style={{
+          textAlign: 'center',
           margin: '20px 0',
           padding: '16px',
           backgroundColor: '#f8f9fa',
@@ -211,25 +211,28 @@ function SpotSelection({
           border: '1px solid #e9ecef'
         }}>
           <div style={{ color: '#f39c12', fontWeight: 'bold', fontSize: '16px' }}>
-            🎉 Maximum spots reached!
+            {totalSpots >= 40 ? '🎉 Maximum spots reached!' : '✨ All unique spots found!'}
           </div>
           <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
-            You have 40 amazing spots to choose from. That's plenty for an incredible trip!
+            {totalSpots >= 40 
+              ? 'You have 40 amazing spots to choose from. That\'s plenty for an incredible trip!'
+              : `You have ${totalSpots} unique spots for ${state.city}. We've found all the best recommendations available!`
+            }
           </div>
         </div>
       )}
 
       <div className="navigation-buttons">
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="btn-secondary"
           onClick={handleBack}
           disabled={state.loading}
         >
           ← Back to City
         </button>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="btn-primary"
           onClick={handleNext}
           disabled={state.loading || selectedCount === 0}

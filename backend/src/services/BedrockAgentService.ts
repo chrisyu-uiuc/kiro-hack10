@@ -236,9 +236,13 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
                 ? `\n\nIMPORTANT: Do NOT include these spots that have already been suggested: ${existingSpotNames.join(', ')}`
                 : '';
 
-            const prompt = `You must respond with ONLY a valid JSON array. Generate exactly 10 NEW tourist spots for ${city} that are different from any previously suggested spots.${excludeText}
+            const prompt = `You must respond with ONLY a valid JSON array containing EXACTLY 10 NEW tourist spots for ${city} that are completely different from any previously suggested spots.${excludeText}
 
-Focus on lesser-known gems, local favorites, hidden spots, alternative attractions, or different categories than what might have been suggested before. Include diverse options like local markets, scenic walks, cultural centers, food districts, artisan workshops, or unique local experiences.
+CRITICAL REQUIREMENTS:
+- Generate EXACTLY 10 spots (no more, no less)
+- Each spot must be genuinely different from existing ones
+- Focus on diverse categories: hidden gems, local favorites, food districts, cultural centers, artisan workshops, scenic walks, unique experiences
+- Avoid generic or obvious tourist attractions if they might duplicate existing suggestions
 
 IMPORTANT: Your response must be ONLY valid JSON in this exact format:
 [
@@ -285,14 +289,26 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
 
                 const spots = JSON.parse(jsonString);
 
+                console.log(`🔍 Parsed ${spots.length} spots from LLM response`);
+
                 // Validate and ensure each spot has required fields, and generate unique IDs
-                return spots.map((spot: any, index: number) => ({
+                const validatedSpots = spots.map((spot: any, index: number) => ({
                     id: spot.id || `more-spot-${Date.now()}-${index + 1}`,
                     name: spot.name || 'Unknown Spot',
                     category: spot.category || 'Attraction',
                     location: spot.location || 'City Center',
                     description: spot.description || 'No description available',
                 }));
+
+                // If we got fewer than 8 spots, supplement with fallback spots
+                if (validatedSpots.length < 8) {
+                    console.log(`⚠️ Only got ${validatedSpots.length} spots from LLM, supplementing with fallback spots`);
+                    const fallbackSpots = this.getFallbackMoreSpots(city, existingSpotNames);
+                    const neededSpots = Math.min(10 - validatedSpots.length, fallbackSpots.length);
+                    return [...validatedSpots, ...fallbackSpots.slice(0, neededSpots)];
+                }
+
+                return validatedSpots;
             } catch (parseError) {
                 console.error('Error parsing more spots JSON:', parseError);
                 console.log('🔍 Attempting to use fallback more spots for:', city);
@@ -310,86 +326,74 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
      */
     private getFallbackMoreSpots(city: string, existingSpotNames: string[]): Spot[] {
         const timestamp = Date.now();
-        const fallbackSpots = [
-            {
-                id: `more-spot-${timestamp}-1`,
-                name: `${city} Local Cafe District`,
-                category: 'Cafe',
-                location: 'Bohemian Quarter',
-                description: `Discover charming local cafes and coffee culture in ${city}'s artistic neighborhood.`
-            },
-            {
-                id: `more-spot-${timestamp}-2`,
-                name: `${city} Street Art Gallery`,
-                category: 'Gallery',
-                location: 'Arts District',
-                description: `Explore vibrant street art and local galleries showcasing ${city}'s creative scene.`
-            },
-            {
-                id: `more-spot-${timestamp}-3`,
-                name: `${city} Riverside Walk`,
-                category: 'Park',
-                location: 'Waterfront',
-                description: `A peaceful riverside walking path offering scenic views and local wildlife.`
-            },
-            {
-                id: `more-spot-${timestamp}-4`,
-                name: `${city} Night Market`,
-                category: 'Market',
-                location: 'Evening District',
-                description: `Experience local nightlife and street food at this bustling evening market.`
-            },
-            {
-                id: `more-spot-${timestamp}-5`,
-                name: `${city} Hidden Temple`,
-                category: 'Religious Site',
-                location: 'Quiet Quarter',
-                description: `A lesser-known spiritual site offering tranquility away from tourist crowds.`
-            },
-            {
-                id: `more-spot-${timestamp}-6`,
-                name: `${city} Artisan Workshop Quarter`,
-                category: 'Local Experience',
-                location: 'Craft District',
-                description: `Visit local artisans and craftspeople creating traditional ${city} handicrafts.`
-            },
-            {
-                id: `more-spot-${timestamp}-7`,
-                name: `${city} Scenic Overlook`,
-                category: 'Viewpoint',
-                location: 'Hillside',
-                description: `A hidden viewpoint offering panoramic views of ${city} away from crowds.`
-            },
-            {
-                id: `more-spot-${timestamp}-8`,
-                name: `${city} Food Street`,
-                category: 'Restaurant',
-                location: 'Culinary District',
-                description: `A street famous for authentic local cuisine and traditional ${city} dishes.`
-            },
-            {
-                id: `more-spot-${timestamp}-9`,
-                name: `${city} Cultural Center`,
-                category: 'Entertainment',
-                location: 'Cultural Quarter',
-                description: `Experience local performances, exhibitions, and cultural events in ${city}.`
-            },
-            {
-                id: `more-spot-${timestamp}-10`,
-                name: `${city} Botanical Gardens`,
-                category: 'Park',
-                location: 'Green District',
-                description: `Beautiful botanical gardens showcasing native plants and peaceful walking paths.`
-            }
+        const random = Math.floor(Math.random() * 1000);
+        
+        // Create multiple sets of fallback spots to ensure variety
+        const fallbackSets = [
+            // Set 1: Cultural & Arts
+            [
+                { name: `Local Artisan Quarter`, category: 'Local Experience', location: 'Craft District', description: `Traditional craftspeople and workshops in ${city}'s artisan neighborhood.` },
+                { name: `Underground Art Scene`, category: 'Gallery', location: 'Alternative District', description: `Discover ${city}'s vibrant underground art galleries and creative spaces.` },
+                { name: `Heritage Walking Trail`, category: 'Historical Site', location: 'Old Quarter', description: `Self-guided trail through ${city}'s most historic neighborhoods and landmarks.` },
+            ],
+            // Set 2: Food & Markets
+            [
+                { name: `Dawn Food Market`, category: 'Market', location: 'Market District', description: `Early morning market where locals shop for fresh produce and street food.` },
+                { name: `Rooftop Dining District`, category: 'Restaurant', location: 'Skyline Area', description: `Collection of rooftop restaurants offering ${city} cuisine with panoramic views.` },
+                { name: `Spice Merchant Alley`, category: 'Shopping', location: 'Spice Quarter', description: `Historic alley filled with traditional spice merchants and exotic ingredients.` },
+            ],
+            // Set 3: Nature & Views
+            [
+                { name: `Secret Garden Sanctuary`, category: 'Park', location: 'Hidden Valley', description: `Peaceful garden sanctuary known only to locals, perfect for quiet reflection.` },
+                { name: `Sunrise Viewpoint Trail`, category: 'Viewpoint', location: 'Eastern Hills', description: `Popular local hiking trail leading to the best sunrise views over ${city}.` },
+                { name: `Waterfront Promenade`, category: 'Park', location: 'Harbor District', description: `Scenic waterfront walk with local vendors and street performers.` },
+            ],
+            // Set 4: Local Experiences
+            [
+                { name: `Traditional Tea House District`, category: 'Cafe', location: 'Tea Quarter', description: `Authentic tea houses where locals gather for traditional ceremonies and conversation.` },
+                { name: `Vintage Bookstore Lane`, category: 'Shopping', location: 'Literary District', description: `Charming lane lined with independent bookstores and literary cafes.` },
+                { name: `Local Music Venue Circuit`, category: 'Entertainment', location: 'Music District', description: `Small venues where ${city}'s local musicians perform traditional and modern music.` },
+            ],
+            // Set 5: Unique Spots
+            [
+                { name: `Floating Market Experience`, category: 'Market', location: 'Canal District', description: `Traditional floating market accessible by small boats, selling local goods.` },
+                { name: `Meditation Garden Retreat`, category: 'Religious Site', location: 'Peaceful Valley', description: `Tranquil meditation gardens used by local spiritual communities.` },
+                { name: `Craftsman Workshop Tours`, category: 'Local Experience', location: 'Workshop District', description: `Visit working craftsmen creating traditional ${city} handicrafts and art.` },
+            ]
         ];
 
-        // Filter out any that might match existing spots (basic name matching)
-        return fallbackSpots.filter(spot => 
-            !existingSpotNames.some(existing => 
-                existing.includes(spot.name.toLowerCase()) || 
-                spot.name.toLowerCase().includes(existing)
-            )
-        );
+        // Select spots from different sets to ensure variety
+        const selectedSpots: any[] = [];
+        let setIndex = random % fallbackSets.length;
+        
+        for (let i = 0; i < 10 && selectedSpots.length < 10; i++) {
+            const currentSet = fallbackSets[setIndex % fallbackSets.length];
+            const spotIndex = Math.floor(i / fallbackSets.length) % currentSet.length;
+            
+            if (currentSet[spotIndex]) {
+                selectedSpots.push({
+                    id: `fallback-${timestamp}-${i + 1}`,
+                    ...currentSet[spotIndex]
+                });
+            }
+            
+            setIndex++;
+        }
+
+        // Filter out any that might match existing spots (more lenient filtering)
+        const filteredSpots = selectedSpots.filter(spot => {
+            const spotName = spot.name.toLowerCase();
+            return !existingSpotNames.some(existing => {
+                // Only filter if there's a very close match (exact or very similar)
+                return existing === spotName || 
+                       (existing.length > 5 && spotName.includes(existing)) ||
+                       (spotName.length > 5 && existing.includes(spotName));
+            });
+        });
+
+        console.log(`🔍 Generated ${selectedSpots.length} fallback spots, filtered to ${filteredSpots.length} unique spots`);
+        
+        return filteredSpots;
     }
 
     /**

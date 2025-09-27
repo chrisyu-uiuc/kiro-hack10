@@ -2,6 +2,37 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { BedrockAgentService } from '../services/BedrockAgentService.js';
 import { sessionStorage } from '../middleware/sessionStorage.js';
 
+// Helper function to calculate string similarity (Levenshtein distance based)
+function calculateSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+function levenshteinDistance(str1: string, str2: string): number {
+  const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+  
+  for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+  
+  for (let j = 1; j <= str2.length; j++) {
+    for (let i = 1; i <= str1.length; i++) {
+      const substitutionCost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1, // insertion
+        matrix[j - 1][i] + 1, // deletion
+        matrix[j - 1][i - 1] + substitutionCost // substitution
+      );
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
 
 const router = Router();
 const bedrockService = new BedrockAgentService();
@@ -230,12 +261,133 @@ router.post('/load-more-spots', async (req: Request, res: Response, next: NextFu
     // Generate more spots using Bedrock Agent with exclusion context
     const newSpots = await bedrockService.generateMoreSpots(session.city, sessionId, existingSpotNames);
 
-    // Filter out any duplicates that might have slipped through
-    const filteredNewSpots = newSpots.filter(newSpot => 
-      !existingSpotNames.includes(newSpot.name.toLowerCase())
-    );
+    // Advanced duplicate detection
+    const filteredNewSpots = newSpots.filter(newSpot => {
+      const newSpotName = newSpot.name.toLowerCase().trim();
+      
+      // Remove common words for better comparison
+      const normalizeForComparison = (name: string) => {
+        return name
+          .replace(/\b(the|a|an|of|in|at|on|for|to|and|or)\b/g, '')
+          .replace(/[^\w\s]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+      
+      const normalizedNewName = normalizeForComparison(newSpotName);
+      
+      return !existingSpotNames.some(existingName => {
+        const normalizedExisting = normalizeForComparison(existingName);
+        
+        // Check for exact matches
+        if (existingName === newSpotName || normalizedExisting === normalizedNewName) {
+          return true;
+        }
+        
+        // Check for substantial overlap (80% similarity for longer names)
+        if (normalizedNewName.length > 8 && normalizedExisting.length > 8) {
+          const similarity = calculateSimilarity(normalizedNewName, normalizedExisting);
+          if (similarity > 0.8) {
+            console.log(`🔍 Filtering similar spot: "${newSpotName}" vs "${existingName}" (${Math.round(similarity * 100)}% similar)`);
+            return true;
+          }
+        }
+        
+        // Check for one name being contained in another (for shorter names)
+        if (normalizedNewName.length > 5 && normalizedExisting.includes(normalizedNewName)) {
+          return true;
+        }
+        if (normalizedExisting.length > 5 && normalizedNewName.includes(normalizedExisting)) {
+          return true;
+        }
+        
+        return false;
+      });
+    });
 
-    if (filteredNewSpots.length === 0) {
+    console.log(`🔍 Generated ${newSpots.length} new spots, filtered to ${filteredNewSpots.length} unique spots`);
+
+    // Determine if we should try to get more spots or if we've exhausted possibilities
+    let finalSpots = filteredNewSpots;
+    let noMoreSpots = false;
+    
+    // If we got very few spots after filtering, try one more attempt
+    if (filteredNewSpots.length < 3 && currentSpotCount < 35) {
+      console.log(`⚠️ Only got ${filteredNewSpots.length} spots after filtering, trying one more attempt...`);
+      
+      try {
+        // Try a different approach - ask for more diverse/unusual spots
+        const diversePrompt = `Generate 10 very unique, unusual, or lesser-known spots in ${session.city} that are completely different from typical tourist attractions. Focus on: local secrets, hidden gems, unusual experiences, off-the-beaten-path locations, local-only spots, unique cultural experiences, or quirky attractions that only locals know about.`;
+        
+        const supplementarySpots = await bedrockService.invokeAgent(diversePrompt, `${sessionId}-diverse-${Date.now()}`);
+        
+        // Try to parse as JSON, but if it fails, we'll just use what we have
+        let additionalSpots: any[] = [];
+        try {
+          const jsonMatch = supplementarySpots.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            additionalSpots = JSON.parse(jsonMatch[0]);
+          }
+        } catch (parseError) {
+          console.log('Could not parse diverse spots response, using existing spots only');
+        }
+        
+        if (additionalSpots.length > 0) {
+          const processedAdditional = additionalSpots.map((spot: any, index: number) => ({
+            id: `diverse-${Date.now()}-${index + 1}`,
+            name: spot.name || `Unique Spot ${index + 1}`,
+            category: spot.category || 'Local Experience',
+            location: spot.location || 'Hidden Location',
+            description: spot.description || 'A unique local experience',
+          }));
+          
+          // Apply the same duplicate filtering
+          const uniqueAdditional = processedAdditional.filter(newSpot => {
+            const newSpotName = newSpot.name.toLowerCase().trim();
+            const normalizeForComparison = (name: string) => {
+              return name
+                .replace(/\b(the|a|an|of|in|at|on|for|to|and|or)\b/g, '')
+                .replace(/[^\w\s]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            };
+            
+            const normalizedNewName = normalizeForComparison(newSpotName);
+            const allExistingNames = [...existingSpotNames, ...filteredNewSpots.map(s => s.name.toLowerCase())];
+            
+            return !allExistingNames.some(existingName => {
+              const normalizedExisting = normalizeForComparison(existingName);
+              
+              if (existingName === newSpotName || normalizedExisting === normalizedNewName) {
+                return true;
+              }
+              
+              if (normalizedNewName.length > 8 && normalizedExisting.length > 8) {
+                const similarity = calculateSimilarity(normalizedNewName, normalizedExisting);
+                if (similarity > 0.8) {
+                  return true;
+                }
+              }
+              
+              return false;
+            });
+          });
+          
+          finalSpots = [...filteredNewSpots, ...uniqueAdditional.slice(0, 8 - filteredNewSpots.length)];
+          console.log(`🔍 Added ${uniqueAdditional.length} diverse spots, total: ${finalSpots.length}`);
+        }
+      } catch (error) {
+        console.log('Failed to generate diverse spots, using existing spots only');
+      }
+    }
+    
+    // If we still have very few spots and we've tried multiple approaches, mark as no more spots
+    if (finalSpots.length < 2 && currentSpotCount > 15) {
+      noMoreSpots = true;
+      console.log(`🚫 Marking as no more spots available (got ${finalSpots.length} spots, total ${currentSpotCount})`);
+    }
+
+    if (finalSpots.length === 0) {
       return res.status(200).json({
         success: true,
         data: {
@@ -251,17 +403,20 @@ router.post('/load-more-spots', async (req: Request, res: Response, next: NextFu
     }
 
     // Append new spots to existing ones in session
-    const updatedAllSpots = [...(session.allSpots || []), ...filteredNewSpots];
+    const updatedAllSpots = [...(session.allSpots || []), ...finalSpots];
     sessionStorage.updateSession(sessionId, { allSpots: updatedAllSpots });
 
     return res.status(200).json({
       success: true,
       data: {
-        spots: filteredNewSpots,
+        spots: finalSpots,
         sessionId,
         city: session.city,
         totalSpots: updatedAllSpots.length,
-        message: `Generated ${filteredNewSpots.length} new spots for ${session.city}`,
+        noMoreSpots: noMoreSpots,
+        message: noMoreSpots 
+          ? `Generated ${finalSpots.length} new spots. This may be all unique spots available for ${session.city}.`
+          : `Generated ${finalSpots.length} new spots for ${session.city}`,
       },
       timestamp: new Date().toISOString(),
     });

@@ -10,6 +10,7 @@ const initialState: AppState = {
   itinerary: null,
   loading: false,
   error: null,
+  noMoreSpots: false,
 };
 
 export function useAppState() {
@@ -36,13 +37,14 @@ export function useAppState() {
   }, [updateState]);
 
   const setSpots = useCallback((spots: Spot[]) => {
-    updateState({ spots, selectedSpotIds: [] });
+    updateState({ spots, selectedSpotIds: [], noMoreSpots: false });
   }, [updateState]);
 
-  const addMoreSpots = useCallback((newSpots: Spot[]) => {
+  const addMoreSpots = useCallback((newSpots: Spot[], noMoreSpots?: boolean) => {
     setState(prev => ({
       ...prev,
-      spots: [...prev.spots, ...newSpots]
+      spots: [...prev.spots, ...newSpots],
+      noMoreSpots: noMoreSpots || prev.noMoreSpots
     }));
   }, []);
 

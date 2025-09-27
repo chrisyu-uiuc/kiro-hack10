@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
+import { BedrockAgentService } from '@/services/BedrockAgentService.js';
 
 // Create mocks that we can control
 const mockVerifyCityExists = vi.fn();
