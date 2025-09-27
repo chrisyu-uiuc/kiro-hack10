@@ -22,6 +22,7 @@ function SpotSelection({
 }: SpotSelectionProps) {
   const navigate = useNavigate();
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [lastLoadedCity, setLastLoadedCity] = useState('');
 
   // Dynamic loading messages
   useEffect(() => {
@@ -46,12 +47,14 @@ function SpotSelection({
     }
   }, [state.loading, state.city]);
 
-  // Load spots when component mounts
+  // Load spots when component mounts or when city changes
   useEffect(() => {
-    if (state.city && state.sessionId && state.spots.length === 0) {
+    if (state.city && state.sessionId && state.city !== lastLoadedCity) {
+      console.log(`🏙️ City changed from "${lastLoadedCity}" to "${state.city}", loading new spots`);
       loadSpots();
+      setLastLoadedCity(state.city);
     }
-  }, [state.city, state.sessionId]);
+  }, [state.city, state.sessionId, lastLoadedCity]);
 
   // Clean up selected spot IDs whenever spots change
   useEffect(() => {
@@ -66,8 +69,10 @@ function SpotSelection({
     setLoading(true);
 
     try {
+      console.log(`🔄 Loading spots for ${state.city} with session ${state.sessionId}`);
       const result = await ApiService.generateSpots(state.city, state.sessionId);
-      setSpots(result.spots);
+      setSpots(result.spots); // This already clears previous spots and selections
+      console.log(`✅ Loaded ${result.spots.length} spots for ${state.city}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to generate spots. Please try again.');
     } finally {

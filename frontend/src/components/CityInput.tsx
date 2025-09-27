@@ -12,6 +12,7 @@ function CityInput({
   setError, 
   setCity, 
   setSessionId,
+  setSpots,
   goToStep 
 }: CityInputProps) {
   const [inputValue, setInputValue] = useState(state.city);
@@ -31,6 +32,8 @@ function CityInput({
       const result = await ApiService.verifyCity(inputValue.trim());
       
       if (result.valid) {
+        // Clear previous spots and selections when changing city
+        setSpots([]);
         setCity(result.city);
         // Generate a session ID for this user session
         const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
