@@ -28,6 +28,8 @@ export interface AppState {
   selectedSpotIds: string[];
   itinerary: Itinerary | null;
   loading: boolean;
+  loadingMore: boolean;
+  loadingItinerary: boolean;
   error: string | null;
   noMoreSpots: boolean;
 }

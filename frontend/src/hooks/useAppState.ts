@@ -9,6 +9,8 @@ const initialState: AppState = {
   selectedSpotIds: [],
   itinerary: null,
   loading: false,
+  loadingMore: false,
+  loadingItinerary: false,
   error: null,
   noMoreSpots: false,
 };
@@ -22,6 +24,14 @@ export function useAppState() {
 
   const setLoading = useCallback((loading: boolean) => {
     updateState({ loading, error: null });
+  }, [updateState]);
+
+  const setLoadingMore = useCallback((loadingMore: boolean) => {
+    updateState({ loadingMore });
+  }, [updateState]);
+
+  const setLoadingItinerary = useCallback((loadingItinerary: boolean) => {
+    updateState({ loadingItinerary });
   }, [updateState]);
 
   const setError = useCallback((error: string | null) => {
@@ -80,6 +90,8 @@ export function useAppState() {
     state,
     updateState,
     setLoading,
+    setLoadingMore,
+    setLoadingItinerary,
     setError,
     setCity,
     setSessionId,

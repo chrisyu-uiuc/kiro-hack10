@@ -10,6 +10,8 @@ interface SpotSelectionProps extends ReturnType<typeof useAppState> { }
 function SpotSelection({
   state,
   setLoading,
+  setLoadingMore,
+  setLoadingItinerary,
   setError,
   setSpots,
   addMoreSpots,
@@ -68,7 +70,7 @@ function SpotSelection({
   const loadMoreSpots = async () => {
     if (!state.sessionId) return;
 
-    setLoading(true);
+    setLoadingMore(true);
 
     try {
       const result = await ApiService.loadMoreSpots(state.sessionId);
@@ -100,7 +102,7 @@ function SpotSelection({
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load more spots. Please try again.');
     } finally {
-      setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -112,7 +114,7 @@ function SpotSelection({
       return;
     }
 
-    setLoading(true);
+    setLoadingItinerary(true);
 
     try {
       console.log('🔄 Storing selections:', selectedSpots.map(spot => spot.id));
@@ -127,7 +129,7 @@ function SpotSelection({
       console.error('❌ Error storing selections:', error);
       setError(error instanceof Error ? error.message : 'Failed to store selections. Please try again.');
     } finally {
-      setLoading(false);
+      setLoadingItinerary(false);
     }
   };
 
@@ -158,7 +160,7 @@ function SpotSelection({
   const totalSpots = state.spots.length;
   const canLoadMore = totalSpots < 40 && totalSpots > 0 && !state.noMoreSpots;
   
-  console.log(`🔍 UI State - totalSpots: ${totalSpots}, noMoreSpots: ${state.noMoreSpots}, canLoadMore: ${canLoadMore}`);
+  console.log(`🔍 UI State - totalSpots: ${totalSpots}, noMoreSpots: ${state.noMoreSpots}, canLoadMore: ${canLoadMore}, loadingMore: ${state.loadingMore}, loadingItinerary: ${state.loadingItinerary}`);
 
   return (
     <div className="step-container">
@@ -195,7 +197,7 @@ function SpotSelection({
             <div className="spot-location">📍 {spot.location}</div>
             <div className="spot-description">{spot.description}</div>
             {state.selectedSpotIds.includes(spot.id) && (
-              <div className="spot-checkmark">
+              <div key={`checkmark-${spot.id}`} className="spot-checkmark">
                 ✓
               </div>
             )}
@@ -209,21 +211,21 @@ function SpotSelection({
             type="button"
             className="btn-secondary"
             onClick={loadMoreSpots}
-            disabled={state.loading}
+            disabled={state.loadingMore}
             style={{
               padding: '12px 24px',
               fontSize: '16px',
               borderRadius: '8px',
               border: '2px solid #646cff',
-              backgroundColor: state.loading ? '#f8f9fa' : 'transparent',
-              color: state.loading ? '#666' : '#646cff',
-              cursor: state.loading ? 'not-allowed' : 'pointer',
+              backgroundColor: state.loadingMore ? '#f8f9fa' : 'transparent',
+              color: state.loadingMore ? '#666' : '#646cff',
+              cursor: state.loadingMore ? 'not-allowed' : 'pointer',
               transition: 'all 0.3s ease',
-              opacity: state.loading ? 0.8 : 1,
+              opacity: state.loadingMore ? 0.8 : 1,
               minWidth: '200px'
             }}
           >
-            {state.loading ? (
+            {state.loadingMore ? (
               <>
                 <span className="loading-icon-bounce" style={{ marginRight: '6px' }}>🔍</span>
                 <span className="loading-icon-pulse" style={{ marginRight: '6px' }}>✨</span>
@@ -239,7 +241,7 @@ function SpotSelection({
             color: '#666',
             marginTop: '8px'
           }}>
-            {state.loading ? (
+            {state.loadingMore ? (
               <span>
                 <span className="loading-icon-pulse">🌟</span>
                 {' '}Finding unique local gems...{' '}
@@ -278,7 +280,7 @@ function SpotSelection({
           type="button"
           className="btn-secondary"
           onClick={handleBack}
-          disabled={state.loading}
+          disabled={state.loadingItinerary}
         >
           ← Back to City
         </button>
@@ -286,13 +288,13 @@ function SpotSelection({
           type="button"
           className="btn-primary"
           onClick={handleNext}
-          disabled={state.loading || selectedCount === 0}
+          disabled={state.loadingItinerary || selectedCount === 0}
           style={{
             minWidth: '200px',
             transition: 'all 0.3s ease'
           }}
         >
-          {state.loading ? (
+          {state.loadingItinerary ? (
             <>
               <span className="loading-icon-spin" style={{ marginRight: '6px' }}>⚙️</span>
               <span className="loading-icon-bounce" style={{ marginRight: '6px' }}>📋</span>
