@@ -239,9 +239,9 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
             const prompt = `You must respond with ONLY a valid JSON array containing EXACTLY 10 NEW tourist spots for ${city} that are completely different from any previously suggested spots.${excludeText}
 
 CRITICAL REQUIREMENTS:
-- Generate EXACTLY 10 spots (no more, no less)
+- Generate EXACTLY 10 spots (no more, no less, no duplicated)
 - Each spot must be genuinely different from existing ones
-- Focus on diverse categories: hidden gems, local favorites, food districts, cultural centers, artisan workshops, scenic walks, unique experiences
+- Focus on diverse categories if possible: hidden gems, local favorites, food districts, cultural centers, artisan workshops, scenic walks, unique experiences
 - Avoid generic or obvious tourist attractions if they might duplicate existing suggestions
 
 IMPORTANT: Your response must be ONLY valid JSON in this exact format:

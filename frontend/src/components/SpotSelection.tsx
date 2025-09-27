@@ -48,6 +48,8 @@ function SpotSelection({
 
     try {
       const result = await ApiService.loadMoreSpots(state.sessionId);
+      console.log(`🔍 Load more response:`, result);
+      
       if (result.spots.length > 0) {
         addMoreSpots(result.spots, result.noMoreSpots);
         // Clear any previous error messages
@@ -55,11 +57,20 @@ function SpotSelection({
           setError(null);
         }
       } else {
-        // Handle different "no more spots" scenarios
-        if (result.message) {
-          setError(result.message);
+        // Even if no spots returned, we need to update the noMoreSpots state
+        if (result.noMoreSpots || result.reachedLimit) {
+          addMoreSpots([], true); // Update state to indicate no more spots available
+          // Clear any previous error messages since this is not an error
+          if (state.error) {
+            setError(null);
+          }
         } else {
-          setError('No new spots found. You may have seen all available recommendations.');
+          // Only show error if it's actually an error (not just "no more spots")
+          if (result.message) {
+            setError(result.message);
+          } else {
+            setError('No new spots found. You may have seen all available recommendations.');
+          }
         }
       }
     } catch (error) {
@@ -119,6 +130,8 @@ function SpotSelection({
   const selectedCount = state.selectedSpotIds.length;
   const totalSpots = state.spots.length;
   const canLoadMore = totalSpots < 40 && totalSpots > 0 && !state.noMoreSpots;
+  
+  console.log(`🔍 UI State - totalSpots: ${totalSpots}, noMoreSpots: ${state.noMoreSpots}, canLoadMore: ${canLoadMore}`);
 
   return (
     <div className="step-container">

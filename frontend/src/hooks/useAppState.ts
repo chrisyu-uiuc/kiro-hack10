@@ -41,6 +41,7 @@ export function useAppState() {
   }, [updateState]);
 
   const addMoreSpots = useCallback((newSpots: Spot[], noMoreSpots?: boolean) => {
+    console.log(`🔍 Adding ${newSpots.length} spots, noMoreSpots: ${noMoreSpots}`);
     setState(prev => ({
       ...prev,
       spots: [...prev.spots, ...newSpots],
