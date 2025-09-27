@@ -104,29 +104,29 @@ export class BedrockAgentService {
 
             // Parse the response to determine if city is valid
             const normalizedResponse = response.toUpperCase().trim();
-            
+
             // Check if agent says it cannot verify cities
             if (normalizedResponse.includes('CANNOT') && normalizedResponse.includes('VERIFY')) {
                 console.log(`⚠️ Bedrock Agent cannot verify cities, using fallback validation for: ${city}`);
                 return this.fallbackCityValidation(city);
             }
-            
+
             // Check for positive indicators
             const positiveIndicators = ['YES', 'VALID', 'EXISTS', 'REAL', 'TRUE'];
             const negativeIndicators = ['NO', 'INVALID', 'NOT', 'FALSE', 'FAKE'];
-            
+
             const hasPositive = positiveIndicators.some(indicator => normalizedResponse.includes(indicator));
             const hasNegative = negativeIndicators.some(indicator => normalizedResponse.includes(indicator));
-            
+
             // If we have positive indicators and no negative ones, accept it
             const isValid = hasPositive && !hasNegative;
-            
+
             console.log(`🔍 Normalized response: "${normalizedResponse}"`);
             console.log(`🔍 Has positive: ${hasPositive}, Has negative: ${hasNegative}, Valid: ${isValid}`);
             return isValid;
         } catch (error) {
             console.error('Error verifying city with Bedrock Agent:', error);
-            
+
             // Fallback: Use basic validation when Bedrock Agent is unavailable
             console.log(`⚠️ Bedrock Agent unavailable, using fallback validation for: ${city}`);
             return this.fallbackCityValidation(city);
@@ -138,16 +138,16 @@ export class BedrockAgentService {
      */
     private fallbackCityValidation(city: string): boolean {
         const trimmedCity = city.toLowerCase().trim();
-        
+
         // Reject obviously invalid inputs
         if (trimmedCity.length < 2) return false;
         if (trimmedCity.length > 50) return false;
         if (!/^[a-zA-Z\s\-'.,]+$/.test(trimmedCity)) return false;
-        
+
         // Reject common non-city words
         const invalidWords = ['test', 'hello', 'world', 'city', 'town', 'place', 'location', 'asdf', 'qwerty'];
         if (invalidWords.includes(trimmedCity)) return false;
-        
+
         // Accept anything else that looks like a reasonable city name
         // This is permissive by design - better to accept a questionable city than reject a valid one
         console.log(`✅ Fallback validation accepting: ${city}`);
