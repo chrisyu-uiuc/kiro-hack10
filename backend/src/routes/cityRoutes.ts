@@ -339,6 +339,7 @@ router.post('/load-more-spots', async (req: Request, res: Response, next: NextFu
             category: spot.category || 'Local Experience',
             location: spot.location || 'Hidden Location',
             description: spot.description || 'A unique local experience',
+            duration: spot.duration || '1-2 hours',
           }));
           
           // Apply the same duplicate filtering

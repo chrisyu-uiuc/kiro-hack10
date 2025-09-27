@@ -6,6 +6,7 @@ export interface Spot {
     category: string;
     location: string;
     description: string;
+    duration: string;
 }
 
 export interface Itinerary {
@@ -168,9 +169,21 @@ IMPORTANT: Your response must be ONLY valid JSON in this exact format:
     "name": "Spot Name",
     "category": "Museum",
     "location": "District Name",
-    "description": "Brief description (max 100 characters)"
+    "description": "Brief description (max 100 characters)",
+    "duration": "2-3 hours"
   }
 ]
+
+DURATION GUIDELINES:
+- Museums/Galleries: "2-3 hours"
+- Parks/Gardens: "1-2 hours" 
+- Restaurants/Cafes: "1 hour"
+- Markets: "1-2 hours"
+- Viewpoints: "30-45 minutes"
+- Religious Sites: "45 minutes - 1 hour"
+- Shopping Areas: "2-3 hours"
+- Entertainment Venues: "2-4 hours"
+- Historical Sites: "1-2 hours"
 
 Do not include any text before or after the JSON. Keep descriptions short. Categories should be: Museum, Park, Restaurant, Historical Site, Shopping, Entertainment, Religious Site, Market, Viewpoint, or Beach.`;
 
@@ -214,6 +227,7 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
                     category: spot.category || 'Attraction',
                     location: spot.location || 'City Center',
                     description: spot.description || 'No description available',
+                    duration: spot.duration || this.getDefaultDuration(spot.category || 'Attraction'),
                 }));
             } catch (parseError) {
                 console.error('Error parsing spots JSON:', parseError);
@@ -225,6 +239,25 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
             console.log('🔍 Using fallback spots due to error for:', city);
             return this.getFallbackSpots(city);
         }
+    }
+
+    /**
+     * Get default duration based on category
+     */
+    private getDefaultDuration(category: string): string {
+        const categoryLower = category.toLowerCase();
+        
+        if (categoryLower.includes('museum') || categoryLower.includes('gallery')) return '2-3 hours';
+        if (categoryLower.includes('park') || categoryLower.includes('garden')) return '1-2 hours';
+        if (categoryLower.includes('restaurant') || categoryLower.includes('cafe')) return '1 hour';
+        if (categoryLower.includes('market')) return '1-2 hours';
+        if (categoryLower.includes('viewpoint')) return '30-45 minutes';
+        if (categoryLower.includes('religious') || categoryLower.includes('temple') || categoryLower.includes('church')) return '45 minutes - 1 hour';
+        if (categoryLower.includes('shopping')) return '2-3 hours';
+        if (categoryLower.includes('entertainment')) return '2-4 hours';
+        if (categoryLower.includes('historical')) return '1-2 hours';
+        
+        return '1-2 hours'; // Default duration
     }
 
     /**
@@ -251,9 +284,22 @@ IMPORTANT: Your response must be ONLY valid JSON in this exact format:
     "name": "Spot Name",
     "category": "Museum",
     "location": "District Name",
-    "description": "Brief description (max 100 characters)"
+    "description": "Brief description (max 100 characters)",
+    "duration": "2-3 hours"
   }
 ]
+
+DURATION GUIDELINES:
+- Museums/Galleries: "2-3 hours"
+- Parks/Gardens: "1-2 hours" 
+- Restaurants/Cafes: "1 hour"
+- Markets: "1-2 hours"
+- Viewpoints: "30-45 minutes"
+- Religious Sites: "45 minutes - 1 hour"
+- Shopping Areas: "2-3 hours"
+- Entertainment Venues: "2-4 hours"
+- Historical Sites: "1-2 hours"
+- Local Experiences: "1-3 hours"
 
 Do not include any text before or after the JSON. Keep descriptions short. Categories should be: Museum, Park, Restaurant, Historical Site, Shopping, Entertainment, Religious Site, Market, Viewpoint, Beach, Cafe, Gallery, or Local Experience.`;
 
@@ -299,6 +345,7 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
                     category: spot.category || 'Attraction',
                     location: spot.location || 'City Center',
                     description: spot.description || 'No description available',
+                    duration: spot.duration || this.getDefaultDuration(spot.category || 'Attraction'),
                 }));
 
                 // If we got fewer than 8 spots, supplement with fallback spots
@@ -374,7 +421,8 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
             if (currentSet[spotIndex]) {
                 selectedSpots.push({
                     id: `fallback-${timestamp}-${i + 1}`,
-                    ...currentSet[spotIndex]
+                    ...currentSet[spotIndex],
+                    duration: this.getDefaultDuration(currentSet[spotIndex].category)
                 });
             }
 
@@ -407,35 +455,40 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
                 name: `${city} Central Park`,
                 category: 'Park',
                 location: 'City Center',
-                description: `A beautiful central park in the heart of ${city}, perfect for relaxation and outdoor activities.`
+                description: `A beautiful central park in the heart of ${city}, perfect for relaxation and outdoor activities.`,
+                duration: '1-2 hours'
             },
             {
                 id: 'spot-2',
                 name: `${city} Museum of History`,
                 category: 'Museum',
                 location: 'Cultural District',
-                description: `Learn about the rich history and culture of ${city} through fascinating exhibits and artifacts.`
+                description: `Learn about the rich history and culture of ${city} through fascinating exhibits and artifacts.`,
+                duration: '2-3 hours'
             },
             {
                 id: 'spot-3',
                 name: `${city} Old Town`,
                 category: 'Historical Site',
                 location: 'Historic Quarter',
-                description: `Explore the charming old town area with traditional architecture and local shops.`
+                description: `Explore the charming old town area with traditional architecture and local shops.`,
+                duration: '1-2 hours'
             },
             {
                 id: 'spot-4',
                 name: `${city} Market Square`,
                 category: 'Market',
                 location: 'Downtown',
-                description: `A vibrant market square where you can find local crafts, food, and souvenirs.`
+                description: `A vibrant market square where you can find local crafts, food, and souvenirs.`,
+                duration: '1-2 hours'
             },
             {
                 id: 'spot-5',
                 name: `${city} Observation Deck`,
                 category: 'Viewpoint',
                 location: 'City Heights',
-                description: `Get panoramic views of ${city} from this popular observation deck.`
+                description: `Get panoramic views of ${city} from this popular observation deck.`,
+                duration: '30-45 minutes'
             }
         ];
     }

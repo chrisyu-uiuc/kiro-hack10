@@ -208,6 +208,7 @@ function SpotSelection({
             <div className="spot-category">{spot.category}</div>
             <h3>{spot.name}</h3>
             <div className="spot-location">📍 {spot.location}</div>
+            <div className="spot-duration">⏱️ {spot.duration}</div>
             <div className="spot-description">{spot.description}</div>
             {state.selectedSpotIds.includes(spot.id) && (
               <div key={`checkmark-${spot.id}`} className="spot-checkmark">

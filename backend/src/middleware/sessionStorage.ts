@@ -7,6 +7,7 @@ export interface Spot {
   category: string;
   location: string;
   description: string;
+  duration: string;
 }
 
 export interface Itinerary {

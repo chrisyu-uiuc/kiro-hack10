@@ -303,6 +303,7 @@ describe('BedrockAgentService', () => {
         category: 'Landmark',
         location: 'Champ de Mars',
         description: 'Iconic iron tower in Paris',
+        duration: '1-2 hours',
       },
       {
         id: 'spot-2',
@@ -310,6 +311,7 @@ describe('BedrockAgentService', () => {
         category: 'Museum',
         location: '1st Arrondissement',
         description: 'World famous art museum',
+        duration: '2-3 hours',
       },
     ];
 
