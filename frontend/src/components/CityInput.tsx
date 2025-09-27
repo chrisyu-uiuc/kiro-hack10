@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
+import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 
 interface CityInputProps extends ReturnType<typeof useAppState> {}
 
@@ -17,6 +18,9 @@ function CityInput({
 }: CityInputProps) {
   const [inputValue, setInputValue] = useState(state.city);
   const navigate = useNavigate();
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +44,8 @@ function CityInput({
         setSessionId(sessionId);
         goToStep('spots');
         navigate('/spots');
+        // Scroll to top after navigation
+        setTimeout(() => scrollToTop(), 100);
       } else {
         setError(`"${inputValue}" is not a recognized city. Please enter a valid city name.`);
       }

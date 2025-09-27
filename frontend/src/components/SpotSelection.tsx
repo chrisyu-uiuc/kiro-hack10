@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
+import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 import { Spot } from '../types';
 
 interface SpotSelectionProps extends ReturnType<typeof useAppState> { }
@@ -23,6 +24,9 @@ function SpotSelection({
   const navigate = useNavigate();
   const [loadingMessage, setLoadingMessage] = useState('');
   const [lastLoadedCity, setLastLoadedCity] = useState('');
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   // Dynamic loading messages
   useEffect(() => {
@@ -138,6 +142,8 @@ function SpotSelection({
       console.log('✅ Selections stored, navigating to itinerary');
       goToStep('itinerary');
       navigate('/itinerary');
+      // Scroll to top after navigation
+      setTimeout(() => scrollToTop(), 100);
     } catch (error) {
       console.error('❌ Error storing selections:', error);
       setError(error instanceof Error ? error.message : 'Failed to store selections. Please try again.');
@@ -149,6 +155,8 @@ function SpotSelection({
   const handleBack = () => {
     goToStep('city');
     navigate('/');
+    // Scroll to top after navigation
+    setTimeout(() => scrollToTop(), 100);
   };
 
   const handleSpotClick = (spot: Spot) => {

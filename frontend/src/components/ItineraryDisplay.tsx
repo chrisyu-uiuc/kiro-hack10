@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from './LoadingSpinner';
 import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
+import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 
 interface ItineraryDisplayProps extends ReturnType<typeof useAppState> {}
 
@@ -14,6 +15,9 @@ function ItineraryDisplay({
   resetState 
 }: ItineraryDisplayProps) {
   const navigate = useNavigate();
+
+  // Scroll to top when component mounts
+  useScrollToTop();
 
   // Generate itinerary when component mounts
   useEffect(() => {
@@ -40,10 +44,14 @@ function ItineraryDisplay({
   const handleStartOver = () => {
     resetState();
     navigate('/');
+    // Scroll to top after navigation
+    setTimeout(() => scrollToTop(), 100);
   };
 
   const handleBack = () => {
     navigate('/spots');
+    // Scroll to top after navigation
+    setTimeout(() => scrollToTop(), 100);
   };
 
   if (state.loading && !state.itinerary) {

@@ -246,7 +246,7 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
      */
     private getDefaultDuration(category: string): string {
         const categoryLower = category.toLowerCase();
-        
+
         if (categoryLower.includes('museum') || categoryLower.includes('gallery')) return '2-3 hours';
         if (categoryLower.includes('park') || categoryLower.includes('garden')) return '1-2 hours';
         if (categoryLower.includes('restaurant') || categoryLower.includes('cafe')) return '1 hour';
@@ -256,7 +256,7 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
         if (categoryLower.includes('shopping')) return '2-3 hours';
         if (categoryLower.includes('entertainment')) return '2-4 hours';
         if (categoryLower.includes('historical')) return '1-2 hours';
-        
+
         return '1-2 hours'; // Default duration
     }
 
