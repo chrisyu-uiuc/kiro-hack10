@@ -17,7 +17,8 @@ function SpotSelection({
   addMoreSpots,
   toggleSpotSelection,
   getSelectedSpots,
-  goToStep
+  goToStep,
+  cleanupSelectedSpotIds
 }: SpotSelectionProps) {
   const navigate = useNavigate();
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -51,6 +52,13 @@ function SpotSelection({
       loadSpots();
     }
   }, [state.city, state.sessionId]);
+
+  // Clean up selected spot IDs whenever spots change
+  useEffect(() => {
+    if (state.spots.length > 0) {
+      cleanupSelectedSpotIds();
+    }
+  }, [state.spots.length, cleanupSelectedSpotIds]);
 
   const loadSpots = async () => {
     if (!state.city || !state.sessionId) return;

@@ -292,8 +292,9 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
                 console.log(`🔍 Parsed ${spots.length} spots from LLM response`);
 
                 // Validate and ensure each spot has required fields, and generate unique IDs
+                const timestamp = Date.now();
                 const validatedSpots = spots.map((spot: any, index: number) => ({
-                    id: spot.id || `more-spot-${Date.now()}-${index + 1}`,
+                    id: `more-${timestamp}-${index + 1}`, // Always generate unique IDs for more spots
                     name: spot.name || 'Unknown Spot',
                     category: spot.category || 'Attraction',
                     location: spot.location || 'City Center',
