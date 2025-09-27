@@ -94,13 +94,7 @@ export class BedrockAgentService {
      */
     async verifyCityExists(city: string): Promise<boolean> {
         try {
-            const prompt = `Please verify if "${city}" is a valid city name that exists anywhere in the world. 
-            
-Accept cities even if the name is ambiguous (like "York" which could be York, England or refer to New York). 
-If it's a real place that people could visit for tourism, respond with "YES".
-Only respond with "NO" if it's clearly not a real city or place name.
-
-Respond with only "YES" or "NO".`;
+            const prompt = `Can you help me plan a trip to ${city}? If ${city} is a real place that tourists can visit, just say "YES I can help with ${city}". If ${city} is not a real place or city, say "NO, ${city} is not a valid destination".`;
             const sessionId = `city-verification-${Date.now()}`;
 
             const response = await this.invokeAgent(prompt, sessionId);
@@ -110,6 +104,12 @@ Respond with only "YES" or "NO".`;
 
             // Parse the response to determine if city is valid
             const normalizedResponse = response.toUpperCase().trim();
+            
+            // Check if agent says it cannot verify cities
+            if (normalizedResponse.includes('CANNOT') && normalizedResponse.includes('VERIFY')) {
+                console.log(`⚠️ Bedrock Agent cannot verify cities, using fallback validation for: ${city}`);
+                return this.fallbackCityValidation(city);
+            }
             
             // Check for positive indicators
             const positiveIndicators = ['YES', 'VALID', 'EXISTS', 'REAL', 'TRUE'];
