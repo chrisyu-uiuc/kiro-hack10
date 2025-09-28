@@ -110,7 +110,7 @@ export class BedrockAgentService {
             - "Parris" → "NO - Did you mean Paris? Parris is not recognized"
             
             Please be precise - only exact city names should get YES.`;
-            
+
             const sessionId = `city-verification-${Date.now()}`;
 
             const response = await this.invokeAgent(prompt, sessionId);
@@ -128,15 +128,15 @@ export class BedrockAgentService {
             }
 
             // More strict checking - only accept if explicitly says YES and mentions it's a city
-            const isCity = normalizedResponse.includes('YES') && 
-                          (normalizedResponse.includes('CITY') || normalizedResponse.includes('IS A CITY'));
-            
+            const isCity = normalizedResponse.includes('YES') &&
+                (normalizedResponse.includes('CITY') || normalizedResponse.includes('IS A CITY'));
+
             // Explicitly reject if it mentions country, state, region, etc.
-            const isNotCity = normalizedResponse.includes('COUNTRY') || 
-                             normalizedResponse.includes('STATE') || 
-                             normalizedResponse.includes('REGION') ||
-                             normalizedResponse.includes('PROVINCE') ||
-                             normalizedResponse.includes('NOT A CITY');
+            const isNotCity = normalizedResponse.includes('COUNTRY') ||
+                normalizedResponse.includes('STATE') ||
+                normalizedResponse.includes('REGION') ||
+                normalizedResponse.includes('PROVINCE') ||
+                normalizedResponse.includes('NOT A CITY');
 
             if (isNotCity) {
                 console.log(`❌ "${city}" rejected - identified as country/state/region`);
@@ -200,7 +200,7 @@ export class BedrockAgentService {
 
         // Reject known countries (major ones that users might confuse with cities)
         const countries = [
-            'china', 'japan', 'usa', 'america', 'united states', 'uk', 'united kingdom', 'england', 
+            'china', 'japan', 'usa', 'america', 'united states', 'uk', 'united kingdom', 'england',
             'france', 'germany', 'italy', 'spain', 'russia', 'india', 'brazil', 'canada', 'australia',
             'mexico', 'south korea', 'korea', 'thailand', 'vietnam', 'indonesia', 'malaysia', 'singapore',
             'philippines', 'taiwan', 'hong kong', 'netherlands', 'belgium', 'switzerland', 'austria',
@@ -208,7 +208,7 @@ export class BedrockAgentService {
             'greece', 'turkey', 'egypt', 'south africa', 'morocco', 'argentina', 'chile', 'peru',
             'colombia', 'venezuela', 'ecuador', 'bolivia', 'uruguay', 'paraguay', 'new zealand'
         ];
-        
+
         if (countries.includes(trimmedCity)) {
             console.log(`❌ Fallback validation rejecting country: ${city}`);
             return false;
@@ -216,11 +216,11 @@ export class BedrockAgentService {
 
         // Reject common US states and regions
         const usStates = [
-            'california', 'texas', 'florida', 'new york', 'pennsylvania', 'illinois', 'ohio', 
+            'california', 'texas', 'florida', 'new york', 'pennsylvania', 'illinois', 'ohio',
             'georgia', 'north carolina', 'michigan', 'new jersey', 'virginia', 'washington',
             'arizona', 'massachusetts', 'tennessee', 'indiana', 'missouri', 'maryland', 'wisconsin'
         ];
-        
+
         if (usStates.includes(trimmedCity)) {
             console.log(`❌ Fallback validation rejecting US state: ${city}`);
             return false;
