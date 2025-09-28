@@ -4,6 +4,7 @@ import PhotoGallery from './PhotoGallery';
 import ReviewsSection from './ReviewsSection';
 import SpotInfoErrorBoundary from './SpotInfoErrorBoundary';
 import ApiService from '@/services/api';
+import { usePerformanceMonitor } from '../utils/performance.js';
 import { 
   classifyError, 
   getErrorMessage, 
@@ -81,6 +82,8 @@ const getViewportWidth = (): number => {
 };
 
 const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) => {
+  const { measureRender, endMeasure } = usePerformanceMonitor('SpotInfoPopup');
+  
   const [state, setState] = useState<SpotInfoPopupState>({
     loading: false,
     placeDetails: null,
@@ -310,8 +313,8 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
         showFallback: false
       }));
 
-      // Fetch spot details from API
-      const placeDetails = await ApiService.fetchSpotDetails(
+      // Fetch spot details from API using debounced version
+      const placeDetails = await ApiService.debouncedFetchSpotDetails(
         spot.id,
         spot.name,
         spot.location
@@ -394,9 +397,12 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
   // Fetch spot details when popup opens
   useEffect(() => {
     if (isOpen && spot) {
-      fetchSpotDetails(false);
+      const measureId = measureRender('mount');
+      fetchSpotDetails(false).finally(() => {
+        endMeasure(measureId);
+      });
     }
-  }, [isOpen, spot, fetchSpotDetails]);
+  }, [isOpen, spot, fetchSpotDetails, measureRender, endMeasure]);
 
   // Reset state when popup closes
   useEffect(() => {

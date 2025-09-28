@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PlacePhoto } from '@/types';
+import { OptimizedImage } from './OptimizedImage.js';
+import { debounce } from '../utils/debounce.js';
 
 interface PhotoGalleryProps {
   photos: PlacePhoto[];
@@ -116,6 +118,21 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altText }) => {
     setCurrentIndex(index);
   }, []);
 
+  // Debounced navigation to prevent rapid clicking
+  const debouncedGoToNext = useCallback(
+    debounce(() => {
+      setCurrentIndex(prev => (prev + 1) % photos.length);
+    }, 150),
+    [photos.length]
+  );
+
+  const debouncedGoToPrevious = useCallback(
+    debounce(() => {
+      setCurrentIndex(prev => (prev - 1 + photos.length) % photos.length);
+    }, 150),
+    [photos.length]
+  );
+
   if (!photos || photos.length === 0) {
     return (
       <div style={noPhotosContainerStyles}>
@@ -140,37 +157,22 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altText }) => {
     >
       {/* Main photo display */}
       <div style={photoContainerStyles}>
-        {imageErrors.has(currentIndex) ? (
-          <div style={errorPlaceholderStyles}>
-            <div style={errorIconStyles}>🖼️</div>
-            <p style={errorTextStyles}>Failed to load image</p>
-          </div>
-        ) : (
-          <>
-            {!loadedImages.has(currentIndex) && (
-              <div style={loadingPlaceholderStyles}>
-                <div style={loadingSpinnerStyles}></div>
-              </div>
-            )}
-            <img
-              src={getPhotoUrl(currentPhoto)}
-              alt={`${altText} - Photo ${currentIndex + 1} of ${photos.length}`}
-              style={{
-                ...photoStyles,
-                opacity: loadedImages.has(currentIndex) ? 1 : 0
-              }}
-              onLoad={() => handleImageLoad(currentIndex)}
-              onError={() => handleImageError(currentIndex)}
-              loading="lazy"
-            />
-          </>
-        )}
+        <OptimizedImage
+          src={getPhotoUrl(currentPhoto)}
+          alt={`${altText} - Photo ${currentIndex + 1} of ${photos.length}`}
+          style={photoStyles}
+          onLoad={() => handleImageLoad(currentIndex)}
+          onError={() => handleImageError(currentIndex)}
+          lazy={true}
+          quality="high"
+          placeholder="Loading photo..."
+        />
 
         {/* Navigation controls */}
         {hasMultiplePhotos && (
           <>
             <button
-              onClick={goToPrevious}
+              onClick={debouncedGoToPrevious}
               style={{...navButtonStyles, ...prevButtonStyles}}
               aria-label="Previous photo"
               type="button"
@@ -178,7 +180,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altText }) => {
               ‹
             </button>
             <button
-              onClick={goToNext}
+              onClick={debouncedGoToNext}
               style={{...navButtonStyles, ...nextButtonStyles}}
               aria-label="Next photo"
               type="button"
