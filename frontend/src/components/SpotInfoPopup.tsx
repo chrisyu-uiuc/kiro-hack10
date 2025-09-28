@@ -125,84 +125,29 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
     }, 200);
   }, [onClose, isClosing]);
 
-  // Handle click outside popup to close
+  // Handle click outside popup to close - disabled on mobile
   const handleOverlayClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
+    // Only allow overlay click to close on desktop
+    if (!isMobileDevice && event.target === event.currentTarget) {
       handleClose();
     }
-  }, [handleClose]);
+  }, [handleClose, isMobileDevice]);
 
-  // Touch event handlers for swipe-to-close
+  // Touch event handlers - DISABLED for mobile to prevent accidental closing
   const handleTouchStart = useCallback((event: React.TouchEvent) => {
-    if (!isMobileDevice) return;
-    
-    const touch = event.touches[0];
-    touchStartY.current = touch.clientY;
-    touchStartX.current = touch.clientX;
-    touchCurrentY.current = touch.clientY;
-    lastTouchTime.current = Date.now();
-  }, [isMobileDevice]);
+    // Disabled - only allow closing via close button
+    return;
+  }, []);
 
   const handleTouchMove = useCallback((event: React.TouchEvent) => {
-    if (!isMobileDevice || touchStartY.current === null) return;
-    
-    const touch = event.touches[0];
-    touchCurrentY.current = touch.clientY;
-    
-    const deltaY = touch.clientY - touchStartY.current;
-    const deltaX = Math.abs(touch.clientX - (touchStartX.current || 0));
-    
-    // Only handle vertical swipes (not horizontal ones for photo gallery)
-    if (deltaX < 50 && deltaY > 0) {
-      // Prevent default scrolling when swiping down to close
-      if (deltaY > 20) {
-        event.preventDefault();
-      }
-      
-      // Apply transform to content for visual feedback
-      if (contentRef.current && deltaY > 0) {
-        const progress = Math.min(deltaY / 200, 1);
-        const scale = 1 - (progress * 0.1);
-        const opacity = 1 - (progress * 0.3);
-        
-        contentRef.current.style.transform = `translateY(${deltaY}px) scale(${scale})`;
-        if (overlayRef.current) {
-          overlayRef.current.style.backgroundColor = `rgba(0, 0, 0, ${0.5 * opacity})`;
-        }
-      }
-    }
-  }, [isMobileDevice]);
+    // Disabled - only allow closing via close button
+    return;
+  }, []);
 
   const handleTouchEnd = useCallback(() => {
-    if (!isMobileDevice || touchStartY.current === null || touchCurrentY.current === null) {
-      return;
-    }
-    
-    const deltaY = touchCurrentY.current - touchStartY.current;
-    const deltaX = Math.abs((touchCurrentY.current) - (touchStartX.current || 0));
-    const touchDuration = Date.now() - lastTouchTime.current;
-    const velocity = deltaY / touchDuration;
-    
-    // Reset transforms
-    if (contentRef.current) {
-      contentRef.current.style.transform = '';
-    }
-    if (overlayRef.current) {
-      overlayRef.current.style.backgroundColor = '';
-    }
-    
-    // Determine if we should close based on swipe distance and velocity
-    const shouldClose = (deltaY > 100 && deltaX < 50) || (velocity > 0.5 && deltaY > 50);
-    
-    if (shouldClose) {
-      handleClose();
-    }
-    
-    // Reset touch tracking
-    touchStartY.current = null;
-    touchStartX.current = null;
-    touchCurrentY.current = null;
-  }, [isMobileDevice, handleClose]);
+    // Disabled - only allow closing via close button
+    return;
+  }, []);
 
   // Viewport change handler for mobile
   const handleViewportChange = useCallback(() => {
@@ -397,9 +342,6 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
       ref={overlayRef}
       className="popup-overlay"
       onClick={handleOverlayClick}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       role="dialog"
       aria-modal="true"
       aria-labelledby="popup-title"
@@ -421,13 +363,6 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
       >
         {/* Header */}
         <div style={headerStyles}>
-          {/* Mobile drag indicator */}
-          {isMobileDevice && (
-            <div style={dragIndicatorStyles}>
-              <div style={dragHandleStyles}></div>
-            </div>
-          )}
-          
           <h2 id="popup-title" style={titleStyles}>
             {spot.name}
           </h2>
