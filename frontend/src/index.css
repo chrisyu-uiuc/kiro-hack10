@@ -1912,10 +1912,42 @@ header {
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
+    max-height: 90vh !important;
+    padding: var(--space-4) !important;
   }
   
   .popup-content.closing {
     animation: popupSlideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  /* Mobile popup header */
+  .popup-content h2 {
+    font-size: var(--text-xl) !important;
+    margin-bottom: var(--space-3) !important;
+    line-height: 1.3 !important;
+    padding-right: var(--space-8) !important;
+  }
+  
+  /* Mobile close button */
+  .popup-content button[aria-label="Close popup"] {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 20px !important;
+    top: var(--space-3) !important;
+    right: var(--space-3) !important;
+  }
+  
+  /* Mobile drag indicator */
+  .popup-content::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: var(--gray-300);
+    border-radius: 2px;
   }
 }
 
@@ -1973,14 +2005,68 @@ header {
 
 /* SpotInfoPopup specific animations - already defined above */
 
-/* Popup overlay styles for better mobile support */
+/* Mobile photo gallery and content improvements */
 @media (max-width: 768px) {
-  .popup-overlay {
-    padding: 10px !important;
+  /* Photo gallery mobile optimization */
+  .popup-content .photo-gallery {
+    margin: var(--space-3) 0 !important;
   }
   
-  .popup-content {
-    max-height: 95vh !important;
-    border-radius: 8px !important;
+  .popup-content .photo-container {
+    height: 200px !important;
+    border-radius: var(--radius-lg) !important;
+  }
+  
+  .popup-content .thumbnail-container {
+    gap: var(--space-2) !important;
+    padding: var(--space-2) 0 !important;
+  }
+  
+  .popup-content .thumbnail-button {
+    width: 60px !important;
+    height: 45px !important;
+  }
+  
+  /* Reviews section mobile */
+  .popup-content .reviews-section {
+    margin: var(--space-3) 0 !important;
+  }
+  
+  .popup-content .review-card {
+    padding: var(--space-3) !important;
+    margin-bottom: var(--space-2) !important;
+    border-radius: var(--radius-md) !important;
+  }
+  
+  .popup-content .review-text {
+    font-size: var(--text-sm) !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Info sections mobile */
+  .popup-content .info-section {
+    margin: var(--space-3) 0 !important;
+    padding: var(--space-3) !important;
+    border-radius: var(--radius-md) !important;
+  }
+  
+  .popup-content .info-item {
+    margin-bottom: var(--space-2) !important;
+    font-size: var(--text-sm) !important;
+  }
+  
+  /* Fallback notice mobile */
+  .popup-content .fallback-notice {
+    margin: var(--space-3) 0 !important;
+    padding: var(--space-3) !important;
+    border-radius: var(--radius-md) !important;
+  }
+  
+  .popup-content .fallback-notice-title {
+    font-size: var(--text-sm) !important;
+  }
+  
+  .popup-content .fallback-notice-message {
+    font-size: var(--text-xs) !important;
   }
 }
