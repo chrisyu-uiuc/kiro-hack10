@@ -94,8 +94,8 @@ function SpotSelection({
       const result = await ApiService.loadMoreSpots(state.sessionId);
       console.log(`🔍 Load more response:`, result);
       
-      // Store the current count before adding
-      const previousCount = state.spots.length;
+      // Store the current count before adding (for potential future use)
+      // const previousCount = state.spots.length;
       
       if (result.spots.length > 0) {
         addMoreSpots(result.spots, result.noMoreSpots);
