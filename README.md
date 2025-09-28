@@ -301,6 +301,12 @@ Both projects use TypeScript path mapping for clean imports:
 5. Keep related files organized by feature/domain
 6. Review security guidelines before submitting changes
 
+## 📚 Additional Documentation
+
+- **[Spot Information Feature Guide](SPOT_INFORMATION_FEATURE.md)** - Comprehensive documentation for the spot information popup feature
+- **[Project Completion Summary](PROJECT_COMPLETION_SUMMARY.md)** - Complete overview of implemented features and achievements
+- **[Deployment Guides](deployment/)** - Production deployment instructions for various platforms
+
 ## 📄 License
 
 This project is licensed under the MIT License.

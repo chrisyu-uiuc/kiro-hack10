@@ -114,6 +114,7 @@ AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 BEDROCK_AGENT_ID=BTATPBP5VG
 BEDROCK_AGENT_ALIAS_ID=JFTVDFJYFF
+GOOGLE_PLACES_API_KEY=your_google_places_api_key
 FRONTEND_URL=https://your-domain.com
 EOF
 
