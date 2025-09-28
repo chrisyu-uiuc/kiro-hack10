@@ -1517,3 +1517,25 @@ page merged container */
 header {
   display: none;
 }
+
+/* SpotInfoPopup specific animations */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Popup overlay styles for better mobile support */
+@media (max-width: 768px) {
+  .popup-overlay {
+    padding: 10px !important;
+  }
+  
+  .popup-content {
+    max-height: 95vh !important;
+    border-radius: 8px !important;
+  }
+}
