@@ -1087,6 +1087,82 @@ header {
     border-radius: var(--radius-lg) !important;
     margin: var(--space-4) 0 !important;
   }
+  
+  /* Mobile itinerary layout */
+  .itinerary-schedule {
+    margin-top: var(--space-6);
+  }
+  
+  .schedule-item {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  }
+  
+  .schedule-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+  }
+  
+  .schedule-time {
+    font-size: var(--text-lg);
+  }
+  
+  .schedule-duration {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+  }
+  
+  .schedule-spot {
+    font-size: var(--text-lg);
+    margin: var(--space-2) 0;
+    line-height: 1.3;
+  }
+  
+  .schedule-details {
+    margin: var(--space-2) 0;
+  }
+  
+  .transportation {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+  }
+  
+  .schedule-notes {
+    font-size: var(--text-sm);
+    margin-top: var(--space-2);
+    line-height: 1.4;
+  }
+  
+  /* Mobile loading spinner */
+  .loading-container {
+    padding: var(--space-6);
+  }
+  
+  .loading-message {
+    font-size: var(--text-sm);
+    margin-top: var(--space-3);
+  }
+  
+  /* Mobile print button optimization */
+  .btn-primary {
+    padding: var(--space-3) var(--space-4) !important;
+    font-size: var(--text-sm) !important;
+  }
+  
+  /* Mobile-specific body adjustments */
+  body {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  /* Ensure proper touch scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Duplicate button styles removed - using modern versions above */
