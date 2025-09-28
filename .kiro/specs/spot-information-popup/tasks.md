@@ -8,7 +8,7 @@
   - Write unit tests for GooglePlacesService methods
   - _Requirements: 1.3, 1.4, 5.1, 5.2, 5.3, 5.4_
 
-- [-] 2. Create backend API endpoint for spot details
+- [x] 2. Create backend API endpoint for spot details
   - Add new route `/api/spots/:spotId/details` in Express router
   - Implement request validation for spot ID and name parameters
   - Integrate GooglePlacesService to fetch place details
@@ -17,7 +17,7 @@
   - Write integration tests for the new API endpoint
   - _Requirements: 1.3, 1.4, 5.1, 5.2_
 
-- [ ] 3. Enhance frontend types and interfaces
+- [-] 3. Enhance frontend types and interfaces
   - Add GooglePlaceDetails interface to types/index.ts
   - Add PlacePhoto, PlaceReview, and OpeningHours interfaces
   - Add PopupErrorState interface for error handling

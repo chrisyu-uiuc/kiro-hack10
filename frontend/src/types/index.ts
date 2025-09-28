@@ -5,6 +5,9 @@ export interface Spot {
   location: string;
   description: string;
   duration: string;
+  // Optional Google Places data (cached)
+  placeId?: string;
+  googlePlaceDetails?: GooglePlaceDetails;
 }
 
 export interface Itinerary {
@@ -75,4 +78,61 @@ export interface ItineraryGenerationResponse {
   itinerary: Itinerary;
   spotsCount: number;
   message: string;
+}
+
+// Google Places API related interfaces
+export interface GooglePlaceDetails {
+  placeId: string;
+  name: string;
+  formattedAddress: string;
+  rating: number;
+  userRatingsTotal: number;
+  photos: PlacePhoto[];
+  reviews: PlaceReview[];
+  openingHours: OpeningHours;
+  websiteUri?: string;
+  googleMapsUri: string;
+  description?: string;
+}
+
+export interface PlacePhoto {
+  photoReference: string;
+  width: number;
+  height: number;
+  htmlAttributions: string[];
+}
+
+export interface PlaceReview {
+  authorName: string;
+  authorUrl?: string;
+  language: string;
+  profilePhotoUrl?: string;
+  rating: number;
+  relativeTimeDescription: string;
+  text: string;
+  time: number;
+}
+
+export interface OpeningHours {
+  openNow: boolean;
+  periods: OpeningPeriod[];
+  weekdayText: string[];
+}
+
+export interface OpeningPeriod {
+  close?: TimeOfDay;
+  open: TimeOfDay;
+}
+
+export interface TimeOfDay {
+  day: number; // 0-6 (Sunday-Saturday)
+  time: string; // HHMM format
+}
+
+// Popup error handling interface
+export interface PopupErrorState {
+  hasError: boolean;
+  errorType: 'network' | 'not-found' | 'rate-limit' | 'unknown';
+  message: string;
+  canRetry: boolean;
 }
