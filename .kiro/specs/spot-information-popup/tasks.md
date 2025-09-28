@@ -17,14 +17,14 @@
   - Write integration tests for the new API endpoint
   - _Requirements: 1.3, 1.4, 5.1, 5.2_
 
-- [-] 3. Enhance frontend types and interfaces
+- [x] 3. Enhance frontend types and interfaces
   - Add GooglePlaceDetails interface to types/index.ts
   - Add PlacePhoto, PlaceReview, and OpeningHours interfaces
   - Add PopupErrorState interface for error handling
   - Update Spot interface to include optional Google Places data
   - _Requirements: 1.4, 2.1, 3.1, 3.2, 5.1_
 
-- [ ] 4. Create SpotInfoPopup component structure
+- [-] 4. Create SpotInfoPopup component structure
   - Create SpotInfoPopup.tsx component with modal overlay
   - Implement popup open/close functionality with proper state management
   - Add loading state display while fetching spot details
