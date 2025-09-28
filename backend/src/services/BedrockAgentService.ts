@@ -167,6 +167,23 @@ export class BedrockAgentService {
     }
 
     /**
+     * Extract suggested city name from AI response
+     */
+    private extractSuggestion(response: string): string | null {
+        try {
+            // Look for patterns like "Did you mean Tokyo?" or "Did you mean Shibuya?"
+            const match = response.match(/did you mean ([^?]+)\?/i);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+            return null;
+        } catch (error) {
+            console.error('Error extracting suggestion:', error);
+            return null;
+        }
+    }
+
+    /**
      * Fallback city validation when Bedrock Agent is unavailable
      */
     private fallbackCityValidation(city: string): boolean {
