@@ -139,7 +139,17 @@ export interface TimeOfDay {
 // Popup error handling interface
 export interface PopupErrorState {
   hasError: boolean;
-  errorType: 'network' | 'not-found' | 'rate-limit' | 'unknown';
+  errorType: 'network' | 'not-found' | 'rate-limit' | 'server-error' | 'timeout' | 'api-key' | 'unknown';
   message: string;
   canRetry: boolean;
+  retryAfter?: number; // Seconds to wait before retry (for rate limiting)
+  fallbackData?: Partial<GooglePlaceDetails>; // Partial data that might be available
+}
+
+// Error handling utilities
+export interface ErrorHandlingOptions {
+  showFallbackContent: boolean;
+  enableRetry: boolean;
+  maxRetries: number;
+  retryDelay: number;
 }

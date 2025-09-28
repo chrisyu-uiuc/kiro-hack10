@@ -258,11 +258,12 @@ export class ApiService {
       
       if (axios.isAxiosError(error)) {
         // Handle specific HTTP error codes
-        if (error.response?.status === 404) {
+        const status = error.response?.status;
+        if (status === 404) {
           throw new Error('Spot information not found. This location may not be available in our database.');
-        } else if (error.response?.status === 429) {
+        } else if (status === 429) {
           throw new Error('Too many requests. Please wait a moment and try again.');
-        } else if (error.response?.status >= 500) {
+        } else if (status !== undefined && status >= 500) {
           throw new Error('Server error. Please try again later.');
         } else if (error.response?.data?.error) {
           throw new Error(error.response.data.error);
@@ -281,11 +282,11 @@ export class ApiService {
   /**
    * Determine if an error should trigger a retry
    */
-  private static shouldRetry(error: any): boolean {
+  private static shouldRetry(error: unknown): boolean {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
       // Retry on server errors (5xx) and timeout errors
-      return status >= 500 || error.code === 'ECONNABORTED';
+      return (status !== undefined && status >= 500) || error.code === 'ECONNABORTED';
     }
     return false;
   }

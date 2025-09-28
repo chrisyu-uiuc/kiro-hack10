@@ -65,7 +65,7 @@ export class GooglePlacesService {
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey || process.env.GOOGLE_PLACES_API_KEY || '';
-    
+
     if (!this.apiKey) {
       throw new Error('Google Places API key is required. Set GOOGLE_PLACES_API_KEY environment variable.');
     }
@@ -81,14 +81,14 @@ export class GooglePlacesService {
     try {
       const query = location ? `${name} ${location}` : name;
       const url = new URL(this.findPlaceUrl);
-      
+
       url.searchParams.append('input', query);
       url.searchParams.append('inputtype', 'textquery');
       url.searchParams.append('fields', 'place_id,name');
       url.searchParams.append('key', this.apiKey);
 
       const response = await fetch(url.toString());
-      
+
       if (!response.ok) {
         throw this.createApiError(`HTTP ${response.status}: ${response.statusText}`, response.status);
       }
@@ -120,7 +120,7 @@ export class GooglePlacesService {
   async getPlaceDetails(placeId: string): Promise<GooglePlaceDetails> {
     try {
       const url = new URL(this.placeDetailsUrl);
-      
+
       const fields = [
         'place_id',
         'name',
@@ -140,7 +140,7 @@ export class GooglePlacesService {
       url.searchParams.append('key', this.apiKey);
 
       const response = await fetch(url.toString());
-      
+
       if (!response.ok) {
         throw this.createApiError(`HTTP ${response.status}: ${response.statusText}`, response.status);
       }
@@ -157,6 +157,14 @@ export class GooglePlacesService {
 
       if (data.status === 'OVER_QUERY_LIMIT') {
         throw this.createApiError('API quota exceeded. Please try again later.', 'OVER_QUERY_LIMIT');
+      }
+
+      if (data.status === 'REQUEST_DENIED') {
+        throw this.createApiError('API access denied. Please check configuration.', 'REQUEST_DENIED');
+      }
+
+      if (data.status === 'INVALID_REQUEST') {
+        throw this.createApiError('Invalid request parameters.', 'INVALID_REQUEST');
       }
 
       throw this.createApiError(`Places API error: ${data.status}`, data.status);

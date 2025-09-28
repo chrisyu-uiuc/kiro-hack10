@@ -1577,6 +1577,123 @@ header {
   display: none;
 }
 
+/* SpotInfoPopup specific animations and mobile optimizations */
+@keyframes popupSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes popupSlideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popupFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Mobile-specific popup styles */
+@media (max-width: 768px) {
+  .popup-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  
+  .popup-content {
+    animation: popupSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .popup-content.closing {
+    animation: popupSlideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+}
+
+/* Desktop popup styles */
+@media (min-width: 769px) {
+  .popup-content {
+    animation: popupFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  .popup-content.closing {
+    animation: popupFadeOut 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+}
+
+/* Enhanced touch targets for mobile */
+@media (max-width: 768px) {
+  .spot-info-button {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+  }
+  
+  /* Ensure all interactive elements meet minimum touch target size */
+  button, .interactive-element {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Image optimization for mobile */
+@media (max-width: 768px) {
+  .popup-content img {
+    image-rendering: optimizeQuality;
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* Prevent zoom on input focus on mobile */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area handling for devices with notches */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) {
+    .popup-content {
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+  }
+}
+
 /* SpotInfoPopup specific animations - already defined above */
 
 /* Popup overlay styles for better mobile support */

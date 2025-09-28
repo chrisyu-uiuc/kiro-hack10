@@ -96,14 +96,19 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altText }) => {
     setImageErrors(prev => new Set([...prev, index]));
   }, []);
 
-  // Generate photo URL (this would typically come from Google Places API)
+  // Generate photo URL with mobile optimization
   const getPhotoUrl = useCallback((photo: PlacePhoto, maxWidth: number = 800) => {
     if (!photo || !photo.photoReference) {
       return '';
     }
+    
+    // Optimize image size for mobile devices
+    const isMobile = window.innerWidth <= 768;
+    const optimizedWidth = isMobile ? Math.min(maxWidth, window.innerWidth * 2) : maxWidth;
+    
     // In a real implementation, this would construct the Google Places Photo API URL
     // For now, we'll use the photoReference as a placeholder
-    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photoreference=${photo.photoReference}&key=YOUR_API_KEY`;
+    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${optimizedWidth}&photoreference=${photo.photoReference}&key=YOUR_API_KEY`;
   }, []);
 
   // Handle direct navigation to specific photo
@@ -253,13 +258,14 @@ const galleryContainerStyles: React.CSSProperties = {
 const photoContainerStyles: React.CSSProperties = {
   position: 'relative',
   width: '100%',
-  height: '300px',
+  height: window.innerWidth <= 768 ? '250px' : '300px', // Smaller height on mobile
   backgroundColor: '#f3f4f6',
   borderRadius: '8px',
   overflow: 'hidden',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  touchAction: 'pan-x', // Allow horizontal panning for swipe gestures
 };
 
 const photoStyles: React.CSSProperties = {
@@ -340,16 +346,17 @@ const navButtonStyles: React.CSSProperties = {
   backgroundColor: 'rgba(0, 0, 0, 0.5)',
   color: 'white',
   border: 'none',
-  width: '40px',
-  height: '40px',
+  width: window.innerWidth <= 768 ? '44px' : '40px', // Larger touch targets on mobile
+  height: window.innerWidth <= 768 ? '44px' : '40px',
   borderRadius: '50%',
-  fontSize: '24px',
+  fontSize: window.innerWidth <= 768 ? '28px' : '24px',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   transition: 'all 0.2s ease',
   zIndex: 2,
+  touchAction: 'manipulation', // Prevent double-tap zoom
 };
 
 const prevButtonStyles: React.CSSProperties = {
