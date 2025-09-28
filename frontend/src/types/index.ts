@@ -80,6 +80,13 @@ export interface ItineraryGenerationResponse {
   message: string;
 }
 
+export interface SpotDetailsResponse {
+  success: boolean;
+  data?: GooglePlaceDetails;
+  error?: string;
+  cached?: boolean;
+}
+
 // Google Places API related interfaces
 export interface GooglePlaceDetails {
   placeId: string;

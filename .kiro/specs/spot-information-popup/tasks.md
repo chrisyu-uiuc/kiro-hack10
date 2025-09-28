@@ -69,7 +69,7 @@
   - Write tests for button interaction and popup triggering
   - _Requirements: 1.1, 1.2_
 
-- [ ] 9. Implement API service integration in frontend
+- [x] 9. Implement API service integration in frontend
   - Add fetchSpotDetails method to ApiService class
   - Implement proper error handling for API calls
   - Add request deduplication to prevent multiple calls for same spot
@@ -78,7 +78,7 @@
   - Write tests for API service integration and error scenarios
   - _Requirements: 1.3, 1.4, 5.1, 5.2, 5.3, 5.4_
 
-- [ ] 10. Add comprehensive error handling and fallback states
+- [-] 10. Add comprehensive error handling and fallback states
   - Implement error boundary for popup component
   - Add retry functionality for failed API calls
   - Create fallback content when Google Places data is unavailable
