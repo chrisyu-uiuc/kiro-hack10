@@ -1194,12 +1194,16 @@ header {
 @media (max-width: 640px) {
   .container {
     padding: var(--space-4) var(--space-2);
+    /* Account for sticky header */
+    padding-top: 0;
   }
 
   .step-container {
     margin: var(--space-2) 0;
     padding: var(--space-6) var(--space-3);
     border-radius: var(--radius-lg);
+    /* Add top margin to account for sticky header */
+    margin-top: var(--space-4);
   }
 
   /* Better mobile form spacing */
@@ -1854,14 +1858,20 @@ g Spinner Styles */
   animation-delay: 0s;
 }
 
-/* S
-mall Header for non-home pages */
+/* Small Header for non-home pages - STICKY */
 .small-header {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: var(--space-6) 0 var(--space-4) 0;
   margin-bottom: var(--space-6);
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .breadcrumb {
@@ -1897,6 +1907,8 @@ mall Header for non-home pages */
 @media (max-width: 768px) {
   .container {
     padding: var(--space-4) var(--space-2);
+    /* Account for sticky header */
+    padding-top: 0;
   }
 
   .main-header {
@@ -1920,6 +1932,13 @@ mall Header for non-home pages */
   .small-header {
     padding: var(--space-4) 0 var(--space-3) 0;
     margin-bottom: var(--space-4);
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   }
 
   .breadcrumb {
@@ -1935,12 +1954,16 @@ mall Header for non-home pages */
 @media (max-width: 480px) {
   .container {
     padding: var(--space-3) var(--space-2);
+    /* Account for sticky header */
+    padding-top: 0;
   }
 
   .step-container {
     padding: var(--space-6) var(--space-3);
     border-radius: var(--radius-xl);
     margin: var(--space-2) 0;
+    /* Add top margin to account for sticky header */
+    margin-top: var(--space-4);
   }
 
   .main-header {
