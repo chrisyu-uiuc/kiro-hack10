@@ -238,15 +238,21 @@ function SpotSelection({
             <div className="spot-description">{spot.description}</div>
             
             {/* Information Button */}
-            <button
-              className="spot-info-button"
+            <div
+              className="spot-info-icon"
               onClick={(e) => handleInfoButtonClick(e, spot)}
+              role="button"
+              tabIndex={0}
               aria-label={`View detailed information about ${spot.name}`}
               title={`View detailed information about ${spot.name}`}
-              type="button"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleInfoButtonClick(e as any, spot);
+                }
+              }}
             >
-              ℹ️
-            </button>
+            </div>
             
             {state.selectedSpotIds.includes(spot.id) && (
               <div key={`checkmark-${spot.id}`} className="spot-checkmark">
@@ -300,7 +306,7 @@ function SpotSelection({
                 <span className="loading-icon-pulse">🏛️</span>
               </span>
             ) : (
-              'Load 10 more spots • Up to 40 total'
+              ''
             )}
           </div>
         </div>

@@ -7,18 +7,19 @@ import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 import ProgressIndicator from './ProgressIndicator';
 import { formatCityName, normalizeUserInput } from '../utils/cityFormatter';
 
-interface CityInputProps extends ReturnType<typeof useAppState> {}
+interface CityInputProps extends ReturnType<typeof useAppState> { }
 
-function CityInput({ 
-  state, 
-  setLoading, 
-  setError, 
-  setCity, 
+function CityInput({
+  state,
+  setLoading,
+  setError,
+  setCity,
   setSessionId,
   setSpots,
   goToStep
 }: CityInputProps) {
   const [inputValue, setInputValue] = useState(state.city);
+  const [hasBeenRejected, setHasBeenRejected] = useState(false);
   const navigate = useNavigate();
 
   // Scroll to top when component mounts
@@ -26,17 +27,17 @@ function CityInput({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!inputValue.trim()) {
       setError('Please enter a city name');
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const result = await ApiService.verifyCity(inputValue.trim());
-      
+
       if (result.valid) {
         // Clear previous spots and selections when changing city
         setSpots([]);
@@ -51,10 +52,15 @@ function CityInput({
         // Scroll to top after navigation
         setTimeout(() => scrollToTop(), 100);
       } else {
-        setError(`"${normalizeUserInput(inputValue)}" is not a recognized city. Please enter a valid city name.`);
+        // This shouldn't happen since verifyCity throws an error for invalid cities
+        setError(`"${normalizeUserInput(inputValue)}" is not a valid city. Please enter a specific city name.`);
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to verify city. Please try again.');
+      console.log('🚨 City verification error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to verify city. Please try again.';
+      console.log('🚨 Setting error message:', errorMessage);
+      setError(errorMessage);
+      setHasBeenRejected(true); // Mark that user has been rejected once
     } finally {
       setLoading(false);
     }
@@ -79,17 +85,17 @@ function CityInput({
   return (
     <div className="step-container">
       <ProgressIndicator currentStep="city" />
-      
+
       {state.loading ? (
-        <LoadingSpinner 
-          type="searching" 
-          message={`Verifying ${normalizeUserInput(inputValue)}...`} 
+        <LoadingSpinner
+          type="searching"
+          message={`Verifying ${normalizeUserInput(inputValue)}...`}
         />
       ) : (
         <>
           <h2>🏙️ Where would you like to travel?</h2>
           <p>Enter a city name to get started with your personalized travel itinerary.</p>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="city">City Name</label>
@@ -103,15 +109,27 @@ function CityInput({
                 disabled={state.loading}
                 autoFocus
               />
+              {!state.error && hasBeenRejected && (
+                <div className="input-hint">
+                  💡 Enter a specific city name, not a country or region
+                </div>
+              )}
               {state.error && (
-                <div className="error-message">{state.error}</div>
+                <div className="error-message">
+                  <div className="error-content">
+                    <div className="error-text">{state.error}</div>
+                    <div className="error-suggestions">
+                      <strong>Valid examples:</strong> Tokyo, Paris, New York, London, Sydney
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
-            
+
             <div className="navigation-buttons">
               <div></div> {/* Empty div for spacing */}
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn-primary"
                 disabled={state.loading || !inputValue.trim()}
               >

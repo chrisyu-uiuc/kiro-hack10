@@ -3,11 +3,18 @@
  * Handles integration with Google Places API for fetching detailed spot information
  */
 
+interface PlacesApiResponse {
+  status: string;
+  candidates?: Array<{ place_id: string }>;
+  result?: any;
+}
+
 export interface PlacePhoto {
   photoReference: string;
   width: number;
   height: number;
   htmlAttributions: string[];
+  photoUrl?: string; // Complete URL with API key
 }
 
 export interface PlaceReview {
@@ -93,7 +100,7 @@ export class GooglePlacesService {
         throw this.createApiError(`HTTP ${response.status}: ${response.statusText}`, response.status);
       }
 
-      const data = await response.json();
+      const data = await response.json() as PlacesApiResponse;
 
       if (data.status === 'OK' && data.candidates && data.candidates.length > 0) {
         return data.candidates[0].place_id;
@@ -145,7 +152,7 @@ export class GooglePlacesService {
         throw this.createApiError(`HTTP ${response.status}: ${response.statusText}`, response.status);
       }
 
-      const data = await response.json();
+      const data = await response.json() as PlacesApiResponse;
 
       if (data.status === 'OK' && data.result) {
         return this.transformPlaceDetails(data.result);
@@ -198,7 +205,9 @@ export class GooglePlacesService {
       photoReference: photo.photo_reference,
       width: photo.width,
       height: photo.height,
-      htmlAttributions: photo.html_attributions || []
+      htmlAttributions: photo.html_attributions || [],
+      // Generate complete photo URL with API key
+      photoUrl: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.apiKey}`
     }));
 
     const reviews: PlaceReview[] = (result.reviews || []).map((review: any) => ({

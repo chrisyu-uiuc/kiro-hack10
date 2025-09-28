@@ -89,10 +89,13 @@ export class ApiService {
    */
   static async verifyCity(city: string): Promise<CityVerificationResponse> {
     try {
+      console.log(`🌐 Verifying city: "${city}"`);
       const response: AxiosResponse<ApiResponse<CityVerificationResponse>> = await apiClient.post(
         '/verify-city',
         { city }
       );
+
+      console.log(`✅ City verification response:`, response.data);
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error?.message || 'Failed to verify city');
@@ -100,7 +103,9 @@ export class ApiService {
 
       return response.data.data;
     } catch (error) {
+      console.log(`❌ City verification error:`, error);
       if (axios.isAxiosError(error) && error.response?.data?.error) {
+        console.log(`❌ Backend error message:`, error.response.data.error.message);
         throw new Error(error.response.data.error.message);
       }
       throw new Error('Network error. Please check your connection and try again.');
@@ -289,11 +294,13 @@ export class ApiService {
     spotLocation?: string
   ): Promise<GooglePlaceDetails> {
     try {
-      const response: AxiosResponse<SpotDetailsResponse> = await apiClient.post(
+      const response: AxiosResponse<SpotDetailsResponse> = await apiClient.get(
         `/spots/${encodeURIComponent(spotId)}/details`,
         { 
-          spotName,
-          spotLocation 
+          params: {
+            spotName,
+            spotLocation 
+          }
         }
       );
 

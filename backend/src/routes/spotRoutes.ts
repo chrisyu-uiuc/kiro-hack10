@@ -232,7 +232,7 @@ router.get('/spots/:spotId/details', async (req: Request, res: Response, next: N
  * DELETE /api/spots/cache
  * Clears the spot details cache (for development/testing)
  */
-router.delete('/spots/cache', (req: Request, res: Response) => {
+router.delete('/spots/cache', (_req: Request, res: Response) => {
   const cacheSize = spotDetailsCache.size;
   spotDetailsCache.clear();
   
@@ -247,12 +247,12 @@ router.delete('/spots/cache', (req: Request, res: Response) => {
  * GET /api/spots/cache/stats
  * Returns cache statistics (for development/monitoring)
  */
-router.get('/spots/cache/stats', (req: Request, res: Response) => {
+router.get('/spots/cache/stats', (_req: Request, res: Response) => {
   const now = Date.now();
   let validEntries = 0;
   let expiredEntries = 0;
 
-  for (const [key, value] of spotDetailsCache.entries()) {
+  for (const [_key, value] of spotDetailsCache.entries()) {
     if ((now - value.timestamp) < CACHE_TTL) {
       validEntries++;
     } else {

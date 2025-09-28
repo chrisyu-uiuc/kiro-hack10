@@ -86,6 +86,7 @@ router.post('/verify-city', async (req: Request, res: Response, next: NextFuncti
 
     // Verify city exists using Bedrock Agent
     const isValid = await bedrockService.verifyCityExists(city);
+    console.log(`🔍 City verification result for "${city}": ${isValid}`);
 
     if (isValid) {
       return res.status(200).json({
@@ -98,15 +99,17 @@ router.post('/verify-city', async (req: Request, res: Response, next: NextFuncti
         timestamp: new Date().toISOString(),
       });
     } else {
+      console.log(`❌ Sending error response for invalid city: "${city}"`);
       return res.status(400).json({
         success: false,
         error: {
           code: 'INVALID_CITY',
-          message: `"${city}" is not a recognized city. Please enter a valid city name.`,
+          message: `"${city}" is not a valid city. Please enter a specific city name (not a country, state, or region).`,
         },
         data: {
           valid: false,
           city: city.trim(),
+          suggestion: 'Try entering a specific city like "Tokyo", "Paris", or "New York".'
         },
         timestamp: new Date().toISOString(),
       });

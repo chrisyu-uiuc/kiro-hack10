@@ -96,7 +96,7 @@
   - Write tests for mobile-specific functionality and responsive behavior
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [-] 12. Add caching and performance optimizations
+- [ ] 12. Add caching and performance optimizations
   - Implement session storage caching for viewed spot details
   - Add image caching and progressive loading
   - Implement request debouncing for rapid button clicks

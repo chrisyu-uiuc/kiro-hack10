@@ -107,6 +107,7 @@ export interface PlacePhoto {
   width: number;
   height: number;
   htmlAttributions: string[];
+  photoUrl?: string; // Complete URL with API key
 }
 
 export interface PlaceReview {

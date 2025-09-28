@@ -222,20 +222,8 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
       document.addEventListener('keydown', handleKeyDown);
       window.addEventListener('resize', handleResize);
       
-      // Enhanced scroll prevention for mobile
-      const originalStyle = window.getComputedStyle(document.body);
-      const scrollY = window.scrollY;
-      
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
+      // Simple scroll prevention - just hide overflow
       document.body.style.overflow = 'hidden';
-      
-      // Store original values for restoration
-      document.body.dataset.scrollY = scrollY.toString();
-      document.body.dataset.originalPosition = originalStyle.position;
-      document.body.dataset.originalTop = originalStyle.top;
-      document.body.dataset.originalWidth = originalStyle.width;
       
       // Handle viewport changes on mobile
       if (window.visualViewport) {
@@ -245,26 +233,8 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
       document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', handleResize);
       
-      // Restore scroll position and body styles
-      const scrollY = document.body.dataset.scrollY;
-      const originalPosition = document.body.dataset.originalPosition;
-      const originalTop = document.body.dataset.originalTop;
-      const originalWidth = document.body.dataset.originalWidth;
-      
-      document.body.style.position = originalPosition || '';
-      document.body.style.top = originalTop || '';
-      document.body.style.width = originalWidth || '';
+      // Simply restore overflow - no scroll position manipulation
       document.body.style.overflow = '';
-      
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY));
-      }
-      
-      // Clean up data attributes
-      delete document.body.dataset.scrollY;
-      delete document.body.dataset.originalPosition;
-      delete document.body.dataset.originalTop;
-      delete document.body.dataset.originalWidth;
       
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleViewportChange);
@@ -313,8 +283,8 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
         showFallback: false
       }));
 
-      // Fetch spot details from API using debounced version
-      const placeDetails = await ApiService.debouncedFetchSpotDetails(
+      // Fetch spot details from API
+      const placeDetails = await ApiService.fetchSpotDetails(
         spot.id,
         spot.name,
         spot.location
@@ -324,7 +294,7 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
       setState(prev => ({
         ...prev,
         loading: false,
-        placeDetails,
+        placeDetails: placeDetails || null,
         error: null,
         retryCount: 0,
         isRetrying: false,
@@ -392,7 +362,7 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
     }
 
     await fetchSpotDetails(true);
-  }, [state.error, state.retryCount, fetchSpotDetails]);
+  }, [state.error, state.retryCount]); // Remove fetchSpotDetails to avoid infinite loop
 
   // Fetch spot details when popup opens
   useEffect(() => {
@@ -402,7 +372,7 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
         endMeasure(measureId);
       });
     }
-  }, [isOpen, spot, fetchSpotDetails, measureRender, endMeasure]);
+  }, [isOpen, spot?.id]); // Only depend on isOpen and spot.id to avoid infinite loop
 
   // Reset state when popup closes
   useEffect(() => {
@@ -565,7 +535,9 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
               {/* Fallback notice */}
               {state.showFallback && (
                 <div style={fallbackNoticeStyles}>
-                  <div style={fallbackNoticeIconStyles}>ℹ️</div>
+                  <div style={fallbackNoticeIconStyles}>
+                    <div className="info-icon"></div>
+                  </div>
                   <div style={fallbackNoticeContentStyles}>
                     <p style={fallbackNoticeTitleStyles}>Limited Information Available</p>
                     <p style={fallbackNoticeMessageStyles}>
@@ -876,6 +848,10 @@ const errorContainerStyles: React.CSSProperties = {
 const errorIconStyles: React.CSSProperties = {
   fontSize: '32px',
   marginBottom: '12px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  lineHeight: 1,
 };
 
 const errorTitleStyles: React.CSSProperties = {
@@ -971,9 +947,15 @@ const fallbackNoticeStyles: React.CSSProperties = {
 };
 
 const fallbackNoticeIconStyles: React.CSSProperties = {
-  fontSize: '16px',
-  marginTop: '2px',
+  marginTop: '1px',
+  marginRight: '8px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
 };
+
+
 
 const fallbackNoticeContentStyles: React.CSSProperties = {
   flex: 1,

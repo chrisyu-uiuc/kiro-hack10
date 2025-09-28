@@ -95,7 +95,22 @@ export class BedrockAgentService {
      */
     async verifyCityExists(city: string): Promise<boolean> {
         try {
-            const prompt = `Can you help me plan a trip to ${city}? If ${city} is a real place that tourists can visit, just say "YES I can help with ${city}". If ${city} is not a real place or city, say "NO, ${city} is not a valid destination".`;
+            // Enhanced prompt to handle typos and distinguish cities from countries/regions
+            const prompt = `Is "${city}" specifically a CITY (not a country, state, or region)? 
+            
+            Rules:
+            - If "${city}" is a city (like Tokyo, Paris, New York), respond: "YES - ${city} is a city"
+            - If "${city}" is a country (like Japan, France, USA), respond: "NO - ${city} is a country, not a city"
+            - If "${city}" is a state/region (like California, Tuscany), respond: "NO - ${city} is a state/region, not a city"
+            - If "${city}" doesn't exist but looks like a typo of a real city, respond: "NO - Did you mean [correct city name]? ${city} is not recognized"
+            - If "${city}" doesn't exist at all, respond: "NO - ${city} is not a real place"
+            
+            Examples of typo corrections:
+            - "Shibua" → "NO - Did you mean Shibuya? Shibua is not recognized"
+            - "Parris" → "NO - Did you mean Paris? Parris is not recognized"
+            
+            Please be precise - only exact city names should get YES.`;
+            
             const sessionId = `city-verification-${Date.now()}`;
 
             const response = await this.invokeAgent(prompt, sessionId);
@@ -112,19 +127,36 @@ export class BedrockAgentService {
                 return this.fallbackCityValidation(city);
             }
 
-            // Check for positive indicators
-            const positiveIndicators = ['YES', 'VALID', 'EXISTS', 'REAL', 'TRUE'];
-            const negativeIndicators = ['NO', 'INVALID', 'NOT', 'FALSE', 'FAKE'];
+            // More strict checking - only accept if explicitly says YES and mentions it's a city
+            const isCity = normalizedResponse.includes('YES') && 
+                          (normalizedResponse.includes('CITY') || normalizedResponse.includes('IS A CITY'));
+            
+            // Explicitly reject if it mentions country, state, region, etc.
+            const isNotCity = normalizedResponse.includes('COUNTRY') || 
+                             normalizedResponse.includes('STATE') || 
+                             normalizedResponse.includes('REGION') ||
+                             normalizedResponse.includes('PROVINCE') ||
+                             normalizedResponse.includes('NOT A CITY');
 
-            const hasPositive = positiveIndicators.some(indicator => normalizedResponse.includes(indicator));
-            const hasNegative = negativeIndicators.some(indicator => normalizedResponse.includes(indicator));
+            if (isNotCity) {
+                console.log(`❌ "${city}" rejected - identified as country/state/region`);
+                return false;
+            }
 
-            // If we have positive indicators and no negative ones, accept it
-            const isValid = hasPositive && !hasNegative;
+            // Check if the response suggests a correction for typos
+            if (normalizedResponse.includes('DID YOU MEAN')) {
+                console.log(`🔧 Typo detected for "${city}", response suggests correction`);
+                // Extract the suggested city name for potential use
+                const suggestion = this.extractSuggestion(response);
+                if (suggestion) {
+                    console.log(`💡 Suggested correction: "${city}" → "${suggestion}"`);
+                }
+                return false; // Still reject, but we have the suggestion
+            }
 
             console.log(`🔍 Normalized response: "${normalizedResponse}"`);
-            console.log(`🔍 Has positive: ${hasPositive}, Has negative: ${hasNegative}, Valid: ${isValid}`);
-            return isValid;
+            console.log(`🔍 Is city: ${isCity}, Is not city: ${isNotCity}`);
+            return isCity;
         } catch (error) {
             console.error('Error verifying city with Bedrock Agent:', error);
 
@@ -149,8 +181,35 @@ export class BedrockAgentService {
         const invalidWords = ['test', 'hello', 'world', 'city', 'town', 'place', 'location', 'asdf', 'qwerty'];
         if (invalidWords.includes(trimmedCity)) return false;
 
+        // Reject known countries (major ones that users might confuse with cities)
+        const countries = [
+            'china', 'japan', 'usa', 'america', 'united states', 'uk', 'united kingdom', 'england', 
+            'france', 'germany', 'italy', 'spain', 'russia', 'india', 'brazil', 'canada', 'australia',
+            'mexico', 'south korea', 'korea', 'thailand', 'vietnam', 'indonesia', 'malaysia', 'singapore',
+            'philippines', 'taiwan', 'hong kong', 'netherlands', 'belgium', 'switzerland', 'austria',
+            'sweden', 'norway', 'denmark', 'finland', 'poland', 'czech republic', 'hungary', 'portugal',
+            'greece', 'turkey', 'egypt', 'south africa', 'morocco', 'argentina', 'chile', 'peru',
+            'colombia', 'venezuela', 'ecuador', 'bolivia', 'uruguay', 'paraguay', 'new zealand'
+        ];
+        
+        if (countries.includes(trimmedCity)) {
+            console.log(`❌ Fallback validation rejecting country: ${city}`);
+            return false;
+        }
+
+        // Reject common US states and regions
+        const usStates = [
+            'california', 'texas', 'florida', 'new york', 'pennsylvania', 'illinois', 'ohio', 
+            'georgia', 'north carolina', 'michigan', 'new jersey', 'virginia', 'washington',
+            'arizona', 'massachusetts', 'tennessee', 'indiana', 'missouri', 'maryland', 'wisconsin'
+        ];
+        
+        if (usStates.includes(trimmedCity)) {
+            console.log(`❌ Fallback validation rejecting US state: ${city}`);
+            return false;
+        }
+
         // Accept anything else that looks like a reasonable city name
-        // This is permissive by design - better to accept a questionable city than reject a valid one
         console.log(`✅ Fallback validation accepting: ${city}`);
         return true;
     }

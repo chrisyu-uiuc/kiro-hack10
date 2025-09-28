@@ -12,6 +12,20 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altText }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  
+  // Add CSS for hiding webkit scrollbars
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .thumbnail-container::-webkit-scrollbar {
+        display: none;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
@@ -108,8 +122,12 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altText }) => {
     const isMobile = window.innerWidth <= 768;
     const optimizedWidth = isMobile ? Math.min(maxWidth, window.innerWidth * 2) : maxWidth;
     
-    // In a real implementation, this would construct the Google Places Photo API URL
-    // For now, we'll use the photoReference as a placeholder
+    // Use the complete photoUrl if available, otherwise construct URL (fallback)
+    if (photo.photoUrl) {
+      // Replace maxwidth parameter with optimized width
+      return photo.photoUrl.replace(/maxwidth=\d+/, `maxwidth=${optimizedWidth}`);
+    }
+    // Fallback for older data without photoUrl
     return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${optimizedWidth}&photoreference=${photo.photoReference}&key=YOUR_API_KEY`;
   }, []);
 
@@ -157,16 +175,21 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altText }) => {
     >
       {/* Main photo display */}
       <div style={photoContainerStyles}>
-        <OptimizedImage
-          src={getPhotoUrl(currentPhoto)}
-          alt={`${altText} - Photo ${currentIndex + 1} of ${photos.length}`}
-          style={photoStyles}
-          onLoad={() => handleImageLoad(currentIndex)}
-          onError={() => handleImageError(currentIndex)}
-          lazy={true}
-          quality="high"
-          placeholder="Loading photo..."
-        />
+        {imageErrors.has(currentIndex) ? (
+          <div style={errorPlaceholderStyles}>
+            <div style={errorIconStyles}>📷</div>
+            <p style={errorTextStyles}>Failed to load image</p>
+          </div>
+        ) : (
+          <img
+            src={getPhotoUrl(currentPhoto)}
+            alt={`${altText} - Photo ${currentIndex + 1} of ${photos.length}`}
+            style={photoStyles}
+            onLoad={() => handleImageLoad(currentIndex)}
+            onError={() => handleImageError(currentIndex)}
+            loading="lazy"
+          />
+        )}
 
         {/* Navigation controls */}
         {hasMultiplePhotos && (
@@ -200,7 +223,10 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, altText }) => {
 
       {/* Thumbnail navigation */}
       {hasMultiplePhotos && photos.length <= 10 && (
-        <div style={thumbnailContainerStyles}>
+        <div 
+          style={thumbnailContainerStyles}
+          className="thumbnail-container"
+        >
           {photos.map((photo, index) => (
             <button
               key={`${photo.photoReference}-${index}`}
@@ -260,7 +286,7 @@ const galleryContainerStyles: React.CSSProperties = {
 const photoContainerStyles: React.CSSProperties = {
   position: 'relative',
   width: '100%',
-  height: window.innerWidth <= 768 ? '250px' : '300px', // Smaller height on mobile
+  height: window.innerWidth <= 768 ? '280px' : '350px', // Better height for photos
   backgroundColor: '#f3f4f6',
   borderRadius: '8px',
   overflow: 'hidden',
@@ -385,23 +411,27 @@ const thumbnailContainerStyles: React.CSSProperties = {
   display: 'flex',
   gap: '8px',
   overflowX: 'auto',
-  padding: '4px 0',
-  scrollbarWidth: 'thin',
+  padding: '8px 0',
+  scrollbarWidth: 'none', // Firefox
+  msOverflowStyle: 'none', // IE/Edge
+  WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
 };
 
 const thumbnailButtonStyles: React.CSSProperties = {
-  width: '60px',
-  height: '60px',
-  border: '2px solid transparent',
-  borderRadius: '6px',
+  width: '120px',
+  height: '90px',
+  borderWidth: '2px',
+  borderStyle: 'solid',
+  borderColor: 'transparent',
+  borderRadius: '8px',
   overflow: 'hidden',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
   flexShrink: 0,
   backgroundColor: '#f3f4f6',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  padding: 0,
+  margin: 0,
+  position: 'relative',
 };
 
 const activeThumbnailStyles: React.CSSProperties = {
@@ -413,6 +443,11 @@ const thumbnailImageStyles: React.CSSProperties = {
   width: '100%',
   height: '100%',
   objectFit: 'cover',
+  display: 'block',
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  borderRadius: '6px', // Slightly smaller than button to account for border
 };
 
 const thumbnailErrorStyles: React.CSSProperties = {

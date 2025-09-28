@@ -243,9 +243,11 @@ describe('ImagePerformanceTracker', () => {
   it('should track failed image loads', () => {
     const trackApiCallSpy = vi.spyOn(PerformanceMonitor, 'trackApiCall').mockImplementation(() => {});
 
-    mockPerformanceNow.mockReturnValueOnce(1000).mockReturnValueOnce(1200);
-
+    // Set up the mock to return different values for start and end
+    mockPerformanceNow.mockReturnValueOnce(1000); // startImageLoad call
     ImagePerformanceTracker.startImageLoad('https://example.com/broken.jpg');
+    
+    mockPerformanceNow.mockReturnValueOnce(1200); // endImageLoad call
     ImagePerformanceTracker.endImageLoad('https://example.com/broken.jpg', false);
 
     expect(trackApiCallSpy).toHaveBeenCalledWith(

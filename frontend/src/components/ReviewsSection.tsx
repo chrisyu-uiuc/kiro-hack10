@@ -278,19 +278,7 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             ))}
           </div>
           
-          {reviews.length > 3 && (
-            <p
-              style={{
-                fontSize: '14px',
-                color: '#6b7280',
-                textAlign: 'center',
-                margin: '12px 0 0 0',
-                fontStyle: 'italic'
-              }}
-            >
-              Showing {displayReviews.length} of {reviews.length} reviews
-            </p>
-          )}
+
         </div>
       ) : (
         <div

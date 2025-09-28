@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { GooglePlacesService, type GooglePlaceDetails, type PlacesApiError } from '../GooglePlacesService';
+import { GooglePlacesService, type PlacesApiError } from '../GooglePlacesService';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
