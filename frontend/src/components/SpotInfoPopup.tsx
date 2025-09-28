@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { Spot, GooglePlaceDetails, PopupErrorState } from '@/types';
+import PhotoGallery from './PhotoGallery';
 
 interface SpotInfoPopupProps {
   spot: Spot;
@@ -163,6 +164,25 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
 
           {!state.loading && !state.error && (
             <div style={basicInfoStyles}>
+              {/* Photo Gallery Section */}
+              {state.placeDetails?.photos && state.placeDetails.photos.length > 0 ? (
+                <div style={sectionStyles}>
+                  <h3 style={sectionTitleStyles}>Photos</h3>
+                  <PhotoGallery 
+                    photos={state.placeDetails.photos} 
+                    altText={spot.name}
+                  />
+                </div>
+              ) : (
+                <div style={sectionStyles}>
+                  <h3 style={sectionTitleStyles}>Photos</h3>
+                  <PhotoGallery 
+                    photos={[]} 
+                    altText={spot.name}
+                  />
+                </div>
+              )}
+
               <div style={infoSectionStyles}>
                 <h3 style={sectionTitleStyles}>Basic Information</h3>
                 <p><strong>Category:</strong> {spot.category}</p>
@@ -172,7 +192,7 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
               </div>
               
               <div style={placeholderStyles}>
-                <p>Detailed information including photos, reviews, and opening hours will be available once the Google Places API integration is complete.</p>
+                <p>Detailed information including reviews and opening hours will be available once the Google Places API integration is complete.</p>
               </div>
             </div>
           )}
@@ -331,6 +351,10 @@ const placeholderStyles: React.CSSProperties = {
   color: '#6b7280',
   fontSize: '14px',
   lineHeight: '1.5',
+};
+
+const sectionStyles: React.CSSProperties = {
+  marginBottom: '24px',
 };
 
 export default SpotInfoPopup;

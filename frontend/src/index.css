@@ -1518,15 +1518,7 @@ header {
   display: none;
 }
 
-/* SpotInfoPopup specific animations */
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
+/* SpotInfoPopup specific animations - already defined above */
 
 /* Popup overlay styles for better mobile support */
 @media (max-width: 768px) {
