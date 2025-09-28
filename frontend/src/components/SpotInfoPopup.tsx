@@ -1,6 +1,40 @@
 import React, { useEffect, useCallback } from 'react';
-import { Spot, GooglePlaceDetails, PopupErrorState } from '@/types';
+import { Spot, GooglePlaceDetails, PopupErrorState, OpeningHours } from '@/types';
 import PhotoGallery from './PhotoGallery';
+import ReviewsSection from './ReviewsSection';
+
+// Helper function to render opening hours
+const renderOpeningHours = (openingHours?: OpeningHours): React.ReactNode => {
+  if (!openingHours) {
+    return <span style={noInfoStyles}>Hours not available</span>;
+  }
+
+  const currentStatus = openingHours.openNow ? 'Open now' : 'Closed';
+  const statusColor = openingHours.openNow ? '#059669' : '#dc2626';
+
+  return (
+    <div>
+      <div style={{ ...statusStyles, color: statusColor }}>
+        {currentStatus}
+      </div>
+      {openingHours.weekdayText && openingHours.weekdayText.length > 0 && (
+        <div style={hoursListStyles}>
+          {openingHours.weekdayText.map((dayHours, index) => (
+            <div key={index} style={dayHoursStyles}>
+              {dayHours}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Helper function to generate Google Maps URL
+const generateGoogleMapsUrl = (spotName: string, location: string): string => {
+  const query = encodeURIComponent(`${spotName}, ${location}`);
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+};
 
 interface SpotInfoPopupProps {
   spot: Spot;
@@ -183,16 +217,104 @@ const SpotInfoPopup: React.FC<SpotInfoPopupProps> = ({ spot, isOpen, onClose }) 
                 </div>
               )}
 
-              <div style={infoSectionStyles}>
-                <h3 style={sectionTitleStyles}>Basic Information</h3>
-                <p><strong>Category:</strong> {spot.category}</p>
-                <p><strong>Location:</strong> {spot.location}</p>
-                <p><strong>Duration:</strong> {spot.duration}</p>
-                <p><strong>Description:</strong> {spot.description}</p>
+              {/* Reviews and Ratings Section */}
+              {state.placeDetails?.reviews && state.placeDetails.rating ? (
+                <div style={sectionStyles}>
+                  <ReviewsSection 
+                    reviews={state.placeDetails.reviews}
+                    rating={state.placeDetails.rating}
+                    totalReviews={state.placeDetails.userRatingsTotal}
+                  />
+                </div>
+              ) : (
+                <div style={sectionStyles}>
+                  <ReviewsSection 
+                    reviews={[]}
+                    rating={0}
+                    totalReviews={0}
+                  />
+                </div>
+              )}
+
+              {/* Practical Information Section */}
+              <div style={sectionStyles}>
+                <h3 style={sectionTitleStyles}>Practical Information</h3>
+                <div style={practicalInfoContainerStyles}>
+                  {/* Address */}
+                  <div style={infoItemStyles}>
+                    <span style={infoLabelStyles}>📍 Address:</span>
+                    <span style={infoValueStyles}>
+                      {state.placeDetails?.formattedAddress || spot.location || 'Address not available'}
+                    </span>
+                  </div>
+
+                  {/* Opening Hours */}
+                  <div style={infoItemStyles}>
+                    <span style={infoLabelStyles}>🕒 Hours:</span>
+                    <div style={infoValueStyles}>
+                      {renderOpeningHours(state.placeDetails?.openingHours)}
+                    </div>
+                  </div>
+
+                  {/* Website */}
+                  {state.placeDetails?.websiteUri && (
+                    <div style={infoItemStyles}>
+                      <span style={infoLabelStyles}>🌐 Website:</span>
+                      <a
+                        href={state.placeDetails.websiteUri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={linkStyles}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = linkHoverStyles.color!;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = linkStyles.color!;
+                        }}
+                      >
+                        Visit Website
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Google Maps Link */}
+                  <div style={infoItemStyles}>
+                    <span style={infoLabelStyles}>🗺️ Map:</span>
+                    <a
+                      href={state.placeDetails?.googleMapsUri || generateGoogleMapsUrl(spot.name, spot.location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={linkStyles}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = linkHoverStyles.color!;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = linkStyles.color!;
+                      }}
+                    >
+                      View on Google Maps
+                    </a>
+                  </div>
+                </div>
               </div>
-              
-              <div style={placeholderStyles}>
-                <p>Detailed information including reviews and opening hours will be available once the Google Places API integration is complete.</p>
+
+              {/* Basic Information Section */}
+              <div style={sectionStyles}>
+                <h3 style={sectionTitleStyles}>Basic Information</h3>
+                <div style={basicInfoContainerStyles}>
+                  <div style={infoItemStyles}>
+                    <span style={infoLabelStyles}>Category:</span>
+                    <span style={infoValueStyles}>{spot.category}</span>
+                  </div>
+                  <div style={infoItemStyles}>
+                    <span style={infoLabelStyles}>Duration:</span>
+                    <span style={infoValueStyles}>{spot.duration}</span>
+                  </div>
+                  <div style={infoItemStyles}>
+                    <span style={infoLabelStyles}>Description:</span>
+                    <span style={infoValueStyles}>{spot.description}</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -330,12 +452,6 @@ const basicInfoStyles: React.CSSProperties = {
   gap: '24px',
 };
 
-const infoSectionStyles: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-};
-
 const sectionTitleStyles: React.CSSProperties = {
   fontSize: '16px',
   fontWeight: '600',
@@ -343,18 +459,77 @@ const sectionTitleStyles: React.CSSProperties = {
   marginBottom: '8px',
 };
 
-const placeholderStyles: React.CSSProperties = {
-  backgroundColor: '#f9fafb',
-  padding: '16px',
-  borderRadius: '8px',
-  border: '1px solid #e5e7eb',
-  color: '#6b7280',
-  fontSize: '14px',
-  lineHeight: '1.5',
-};
-
 const sectionStyles: React.CSSProperties = {
   marginBottom: '24px',
+};
+
+// New styles for practical information
+const practicalInfoContainerStyles: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px',
+};
+
+const basicInfoContainerStyles: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px',
+};
+
+const infoItemStyles: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '8px',
+  minHeight: '24px',
+};
+
+const infoLabelStyles: React.CSSProperties = {
+  fontWeight: '500',
+  color: '#374151',
+  minWidth: '80px',
+  fontSize: '14px',
+};
+
+const infoValueStyles: React.CSSProperties = {
+  color: '#111827',
+  fontSize: '14px',
+  lineHeight: '1.4',
+  flex: 1,
+};
+
+const linkStyles: React.CSSProperties = {
+  color: '#3b82f6',
+  textDecoration: 'none',
+  fontSize: '14px',
+  fontWeight: '500',
+  cursor: 'pointer',
+  transition: 'color 0.2s',
+};
+
+const linkHoverStyles: React.CSSProperties = {
+  color: '#1d4ed8',
+};
+
+const noInfoStyles: React.CSSProperties = {
+  color: '#9ca3af',
+  fontStyle: 'italic',
+  fontSize: '14px',
+};
+
+const statusStyles: React.CSSProperties = {
+  fontWeight: '600',
+  fontSize: '14px',
+  marginBottom: '4px',
+};
+
+const hoursListStyles: React.CSSProperties = {
+  fontSize: '13px',
+  color: '#6b7280',
+  lineHeight: '1.3',
+};
+
+const dayHoursStyles: React.CSSProperties = {
+  marginBottom: '2px',
 };
 
 export default SpotInfoPopup;

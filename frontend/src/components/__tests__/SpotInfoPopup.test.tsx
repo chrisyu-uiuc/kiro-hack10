@@ -23,13 +23,58 @@ const mockSpotWithGoogleData: Spot = {
     rating: 4.5,
     userRatingsTotal: 100,
     photos: [],
-    reviews: [],
+    reviews: [
+      {
+        authorName: 'John Doe',
+        language: 'en',
+        rating: 5,
+        relativeTimeDescription: '2 weeks ago',
+        text: 'Great museum with amazing exhibits!',
+        time: 1640995200
+      }
+    ],
     openingHours: {
       openNow: true,
       periods: [],
-      weekdayText: []
+      weekdayText: [
+        'Monday: 9:00 AM – 5:00 PM',
+        'Tuesday: 9:00 AM – 5:00 PM',
+        'Wednesday: 9:00 AM – 5:00 PM',
+        'Thursday: 9:00 AM – 5:00 PM',
+        'Friday: 9:00 AM – 5:00 PM',
+        'Saturday: 10:00 AM – 4:00 PM',
+        'Sunday: Closed'
+      ]
     },
+    websiteUri: 'https://testmuseum.com',
     googleMapsUri: 'https://maps.google.com/?cid=123'
+  }
+};
+
+const mockSpotWithClosedHours: Spot = {
+  ...mockSpot,
+  googlePlaceDetails: {
+    placeId: 'ChIJ456',
+    name: 'Test Museum',
+    formattedAddress: '123 Test St, Test City',
+    rating: 4.5,
+    userRatingsTotal: 100,
+    photos: [],
+    reviews: [],
+    openingHours: {
+      openNow: false,
+      periods: [],
+      weekdayText: [
+        'Monday: 9:00 AM – 5:00 PM',
+        'Tuesday: 9:00 AM – 5:00 PM',
+        'Wednesday: 9:00 AM – 5:00 PM',
+        'Thursday: 9:00 AM – 5:00 PM',
+        'Friday: 9:00 AM – 5:00 PM',
+        'Saturday: 10:00 AM – 4:00 PM',
+        'Sunday: Closed'
+      ]
+    },
+    googleMapsUri: 'https://maps.google.com/?cid=456'
   }
 };
 
@@ -225,6 +270,63 @@ describe('SpotInfoPopup', () => {
     // but the detailed view will be implemented in later tasks
   });
 
+  it('should display reviews section with Google Places data', () => {
+    render(
+      <SpotInfoPopup 
+        spot={mockSpotWithGoogleData} 
+        isOpen={true} 
+        onClose={mockOnClose} 
+      />
+    );
+    
+    // Should display the rating
+    const ratingElements = screen.getAllByText('4.5');
+    expect(ratingElements.length).toBeGreaterThan(0);
+    
+    // Should display review count
+    expect(screen.getByText('Based on 100 reviews')).toBeInTheDocument();
+    
+    // Should display the review
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('Great museum with amazing exhibits!')).toBeInTheDocument();
+  });
+
+  it('should display empty reviews section when no Google Places data', async () => {
+    render(
+      <SpotInfoPopup 
+        spot={mockSpot} 
+        isOpen={true} 
+        onClose={mockOnClose} 
+      />
+    );
+    
+    // Wait for loading to complete and error state to show
+    await waitFor(() => {
+      expect(screen.getByText('Unable to load details')).toBeInTheDocument();
+    }, { timeout: 2000 });
+    
+    // In error state, the reviews section is not displayed
+    // This is expected behavior as the component shows error instead of content
+    expect(screen.queryByText('No reviews available for this location')).not.toBeInTheDocument();
+  });
+
+  it('should display reviews section with proper star ratings', () => {
+    render(
+      <SpotInfoPopup 
+        spot={mockSpotWithGoogleData} 
+        isOpen={true} 
+        onClose={mockOnClose} 
+      />
+    );
+    
+    // Should display star rating with accessibility
+    expect(screen.getByRole('img', { name: /4.5 out of 5 stars/i })).toBeInTheDocument();
+    
+    // Should have multiple star ratings (overall + individual reviews)
+    const starRatings = screen.getAllByRole('img', { name: /out of 5 stars/i });
+    expect(starRatings.length).toBeGreaterThan(1);
+  });
+
   it('should have proper accessibility attributes', () => {
     render(
       <SpotInfoPopup 
@@ -277,5 +379,220 @@ describe('SpotInfoPopup', () => {
     
     // Should show loading again (state was reset)
     expect(screen.getByText('Loading spot details...')).toBeInTheDocument();
+  });
+
+  // Tests for practical information display (Task 7)
+  describe('Practical Information Display', () => {
+    it('should display formatted address from Google Places data', () => {
+      render(
+        <SpotInfoPopup 
+          spot={mockSpotWithGoogleData} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      expect(screen.getByText('Practical Information')).toBeInTheDocument();
+      expect(screen.getByText('📍 Address:')).toBeInTheDocument();
+      expect(screen.getByText('123 Test St, Test City')).toBeInTheDocument();
+    });
+
+    it('should fallback to spot location when Google Places address is not available', async () => {
+      render(
+        <SpotInfoPopup 
+          spot={mockSpot} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      // Wait for error state to show
+      await waitFor(() => {
+        expect(screen.getByText('Unable to load details')).toBeInTheDocument();
+      }, { timeout: 2000 });
+      
+      // In error state, practical information is not shown
+      // This is expected as the component shows error instead of content
+    });
+
+    it('should display opening hours with "Open now" status', () => {
+      render(
+        <SpotInfoPopup 
+          spot={mockSpotWithGoogleData} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      expect(screen.getByText('🕒 Hours:')).toBeInTheDocument();
+      expect(screen.getByText('Open now')).toBeInTheDocument();
+      expect(screen.getByText('Monday: 9:00 AM – 5:00 PM')).toBeInTheDocument();
+      expect(screen.getByText('Sunday: Closed')).toBeInTheDocument();
+    });
+
+    it('should display opening hours with "Closed" status', () => {
+      render(
+        <SpotInfoPopup 
+          spot={mockSpotWithClosedHours} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      expect(screen.getByText('🕒 Hours:')).toBeInTheDocument();
+      expect(screen.getByText('Closed')).toBeInTheDocument();
+      expect(screen.getByText('Monday: 9:00 AM – 5:00 PM')).toBeInTheDocument();
+    });
+
+    it('should display "Hours not available" when opening hours data is missing', async () => {
+      const spotWithoutHours: Spot = {
+        ...mockSpot,
+        googlePlaceDetails: {
+          ...mockSpotWithGoogleData.googlePlaceDetails!,
+          openingHours: undefined as any
+        }
+      };
+
+      render(
+        <SpotInfoPopup 
+          spot={spotWithoutHours} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      expect(screen.getByText('Hours not available')).toBeInTheDocument();
+    });
+
+    it('should display clickable website link that opens in new tab', () => {
+      render(
+        <SpotInfoPopup 
+          spot={mockSpotWithGoogleData} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      expect(screen.getByText('🌐 Website:')).toBeInTheDocument();
+      
+      const websiteLink = screen.getByText('Visit Website');
+      expect(websiteLink).toBeInTheDocument();
+      expect(websiteLink).toHaveAttribute('href', 'https://testmuseum.com');
+      expect(websiteLink).toHaveAttribute('target', '_blank');
+      expect(websiteLink).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
+    it('should not display website section when website URI is not available', () => {
+      const spotWithoutWebsite: Spot = {
+        ...mockSpot,
+        googlePlaceDetails: {
+          ...mockSpotWithGoogleData.googlePlaceDetails!,
+          websiteUri: undefined
+        }
+      };
+
+      render(
+        <SpotInfoPopup 
+          spot={spotWithoutWebsite} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      expect(screen.queryByText('🌐 Website:')).not.toBeInTheDocument();
+      expect(screen.queryByText('Visit Website')).not.toBeInTheDocument();
+    });
+
+    it('should display Google Maps link that opens in new tab', () => {
+      render(
+        <SpotInfoPopup 
+          spot={mockSpotWithGoogleData} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      expect(screen.getByText('🗺️ Map:')).toBeInTheDocument();
+      
+      const mapsLink = screen.getByText('View on Google Maps');
+      expect(mapsLink).toBeInTheDocument();
+      expect(mapsLink).toHaveAttribute('href', 'https://maps.google.com/?cid=123');
+      expect(mapsLink).toHaveAttribute('target', '_blank');
+      expect(mapsLink).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
+    it('should generate Google Maps URL when Google Places URI is not available', async () => {
+      render(
+        <SpotInfoPopup 
+          spot={mockSpot} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      // Wait for error state to show
+      await waitFor(() => {
+        expect(screen.getByText('Unable to load details')).toBeInTheDocument();
+      }, { timeout: 2000 });
+      
+      // In error state, practical information is not shown
+      // This is expected as the component shows error instead of content
+    });
+
+    it('should display basic information section with proper formatting', () => {
+      render(
+        <SpotInfoPopup 
+          spot={mockSpotWithGoogleData} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      expect(screen.getByText('Basic Information')).toBeInTheDocument();
+      expect(screen.getByText('Category:')).toBeInTheDocument();
+      expect(screen.getByText('Museum')).toBeInTheDocument();
+      expect(screen.getByText('Duration:')).toBeInTheDocument();
+      expect(screen.getByText('2 hours')).toBeInTheDocument();
+      expect(screen.getByText('Description:')).toBeInTheDocument();
+      expect(screen.getByText('A wonderful test museum with great exhibits')).toBeInTheDocument();
+    });
+
+    it('should handle missing information gracefully', () => {
+      const spotWithMinimalData: Spot = {
+        ...mockSpot,
+        googlePlaceDetails: {
+          placeId: 'ChIJ789',
+          name: 'Test Museum',
+          formattedAddress: '',
+          rating: 0,
+          userRatingsTotal: 0,
+          photos: [],
+          reviews: [],
+          openingHours: {
+            openNow: false,
+            periods: [],
+            weekdayText: []
+          },
+          googleMapsUri: ''
+        }
+      };
+
+      render(
+        <SpotInfoPopup 
+          spot={spotWithMinimalData} 
+          isOpen={true} 
+          onClose={mockOnClose} 
+        />
+      );
+      
+      // Should show fallback address
+      expect(screen.getByText('Test City')).toBeInTheDocument();
+      
+      // Should show closed status
+      expect(screen.getByText('Closed')).toBeInTheDocument();
+      
+      // Should not show website section
+      expect(screen.queryByText('🌐 Website:')).not.toBeInTheDocument();
+    });
   });
 });

@@ -42,7 +42,7 @@
   - Write tests for photo gallery navigation and error states
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 6.2_
 
-- [ ] 6. Build reviews and ratings display
+- [x] 6. Build reviews and ratings display
   - Create ReviewsSection component to display ratings and reviews
   - Implement star rating display with proper accessibility
   - Add review text display with author information
@@ -51,7 +51,7 @@
   - Write tests for reviews display and empty states
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 7. Add practical information display
+- [x] 7. Add practical information display
   - Implement formatted address display in popup
   - Add opening hours display with current status (open/closed)
   - Create clickable website link that opens in new tab
@@ -60,7 +60,7 @@
   - Write tests for information display and link functionality
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 8. Add information button to spot cards
+- [-] 8. Add information button to spot cards
   - Modify SpotSelection component to include info button on each spot card
   - Add click handler to open SpotInfoPopup with selected spot data
   - Implement proper button styling and positioning

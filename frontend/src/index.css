@@ -748,6 +748,54 @@ header {
   flex-grow: 1;
 }
 
+.spot-info-button {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-16);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
+}
+
+.spot-info-button:hover {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.spot-info-button:hover::after {
+  content: 'ℹ️';
+  filter: brightness(0) invert(1);
+}
+
+.spot-info-button:active {
+  transform: translateY(0) scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.spot-info-button:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
+}
+
+/* Adjust positioning when spot is selected to avoid overlap with checkmark */
+.spot-card.selected .spot-info-button {
+  right: var(--space-20);
+}
+
 .spot-checkmark {
   position: absolute;
   top: var(--space-4);
@@ -902,6 +950,17 @@ header {
 
   .spot-card {
     padding: var(--space-4);
+  }
+
+  .spot-info-button {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    right: var(--space-12);
+  }
+
+  .spot-card.selected .spot-info-button {
+    right: var(--space-16);
   }
 
   h2 {

@@ -6,6 +6,7 @@ import { useAppState } from '../hooks/useAppState';
 import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 import { Spot } from '../types';
 import ProgressIndicator from './ProgressIndicator';
+import SpotInfoPopup from './SpotInfoPopup';
 
 interface SpotSelectionProps extends ReturnType<typeof useAppState> { }
 
@@ -25,6 +26,8 @@ function SpotSelection({
   const navigate = useNavigate();
   const [loadingMessage, setLoadingMessage] = useState('');
   const [lastLoadedCity, setLastLoadedCity] = useState('');
+  const [selectedSpotForInfo, setSelectedSpotForInfo] = useState<Spot | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   // Scroll to top when component mounts
   useScrollToTop();
@@ -174,6 +177,17 @@ function SpotSelection({
     }
   };
 
+  const handleInfoButtonClick = (event: React.MouseEvent, spot: Spot) => {
+    event.stopPropagation(); // Prevent spot selection when clicking info button
+    setSelectedSpotForInfo(spot);
+    setIsPopupOpen(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupOpen(false);
+    setSelectedSpotForInfo(null);
+  };
+
   if (state.loading && state.spots.length === 0) {
     return (
       <div className="step-container">
@@ -222,6 +236,18 @@ function SpotSelection({
             <div className="spot-location">📍 {spot.location}</div>
             <div className="spot-duration">⏱️ {spot.duration}</div>
             <div className="spot-description">{spot.description}</div>
+            
+            {/* Information Button */}
+            <button
+              className="spot-info-button"
+              onClick={(e) => handleInfoButtonClick(e, spot)}
+              aria-label={`View detailed information about ${spot.name}`}
+              title={`View detailed information about ${spot.name}`}
+              type="button"
+            >
+              ℹ️
+            </button>
+            
             {state.selectedSpotIds.includes(spot.id) && (
               <div key={`checkmark-${spot.id}`} className="spot-checkmark">
                 ✓
@@ -332,6 +358,15 @@ function SpotSelection({
           )}
         </button>
       </div>
+
+      {/* Spot Information Popup */}
+      {selectedSpotForInfo && (
+        <SpotInfoPopup
+          spot={selectedSpotForInfo}
+          isOpen={isPopupOpen}
+          onClose={handleClosePopup}
+        />
+      )}
     </div>
   );
 }
