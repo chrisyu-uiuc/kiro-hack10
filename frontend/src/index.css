@@ -661,6 +661,8 @@ header {
   grid-auto-rows: minmax(200px, auto);
   justify-content: start;
   align-content: start;
+  /* Prevent layout shifts during interactions */
+  contain: layout;
 }
 
 .spot-card {
@@ -671,6 +673,7 @@ header {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background: white;
   min-height: 200px;
+  height: auto;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -683,6 +686,8 @@ header {
   animation: cardSlideIn 0.6s ease-out forwards;
   opacity: 0;
   transform: translateY(30px);
+  /* Prevent layout shifts by reserving space for transforms */
+  margin-bottom: var(--space-2);
 }
 
 .spot-card:nth-child(1) {
@@ -717,10 +722,11 @@ header {
 }
 
 .spot-card:hover {
-  transform: translateY(-8px) scale(1.02);
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(99, 102, 241, 0.2);
+  /* Use subtle transform that doesn't affect layout */
+  transform: translateZ(0) scale(1.01);
 }
 
 .spot-card.selected {
@@ -728,7 +734,8 @@ header {
   box-shadow:
     0 15px 35px rgba(99, 102, 241, 0.2),
     0 0 0 2px var(--primary-500);
-  transform: translateY(-4px) scale(1.01);
+  /* Remove transform that causes layout shifts */
+  transform: translateZ(0);
 }
 
 .spot-card h3 {
@@ -1186,12 +1193,12 @@ header {
 /* Responsive Design */
 @media (max-width: 640px) {
   .container {
-    padding: var(--space-4) var(--space-3);
+    padding: var(--space-4) var(--space-2);
   }
 
   .step-container {
-    margin: var(--space-2) var(--space-1);
-    padding: var(--space-6) var(--space-4);
+    margin: var(--space-2) 0;
+    padding: var(--space-6) var(--space-3);
     border-radius: var(--radius-lg);
   }
 
@@ -1271,24 +1278,31 @@ header {
 
   .spots-grid {
     grid-template-columns: 1fr;
-    gap: var(--space-4);
-    padding: 0 var(--space-2);
+    gap: var(--space-3);
+    padding: 0;
     margin: var(--space-6) 0;
+    /* Prevent layout shifts during card state changes */
+    grid-auto-rows: minmax(180px, auto);
   }
 
   .spot-card {
     padding: var(--space-4);
-    margin: 0 var(--space-1);
+    margin: 0;
     border-radius: var(--radius-lg);
     position: relative;
+    /* Ensure consistent height on mobile */
+    min-height: 180px;
+    height: auto;
   }
 
   /* Ensure selected cards don't touch screen edges */
   .spot-card.selected {
-    margin: 0 var(--space-1);
+    margin: 0;
     box-shadow:
       0 15px 35px rgba(99, 102, 241, 0.2),
       0 0 0 2px var(--primary-500);
+    /* Prevent height changes on mobile */
+    transform: translateZ(0);
   }
 
   /* Mobile spot card content */
@@ -1879,11 +1893,10 @@ mall Header for non-home pages */
   color: var(--gray-700);
 }
 
-/* Impr
-oved Responsive Design */
+/* Improved Responsive Design */
 @media (max-width: 768px) {
   .container {
-    padding: var(--space-4);
+    padding: var(--space-4) var(--space-2);
   }
 
   .main-header {
@@ -1921,12 +1934,13 @@ oved Responsive Design */
 
 @media (max-width: 480px) {
   .container {
-    padding: var(--space-3);
+    padding: var(--space-3) var(--space-2);
   }
 
   .step-container {
-    padding: var(--space-6);
+    padding: var(--space-6) var(--space-3);
     border-radius: var(--radius-xl);
+    margin: var(--space-2) 0;
   }
 
   .main-header {
