@@ -5,6 +5,7 @@ import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
 import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 import ProgressIndicator from './ProgressIndicator';
+import { formatCityName, normalizeUserInput } from '../utils/cityFormatter';
 
 interface CityInputProps extends ReturnType<typeof useAppState> {}
 
@@ -39,7 +40,9 @@ function CityInput({
       if (result.valid) {
         // Clear previous spots and selections when changing city
         setSpots([]);
-        setCity(result.city);
+        // Use the formatted city name from backend, or format the input if backend doesn't format it
+        const formattedCity = result.city ? formatCityName(result.city) : formatCityName(inputValue.trim());
+        setCity(formattedCity);
         // Generate a session ID for this user session
         const sessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         setSessionId(sessionId);
@@ -48,7 +51,7 @@ function CityInput({
         // Scroll to top after navigation
         setTimeout(() => scrollToTop(), 100);
       } else {
-        setError(`"${inputValue}" is not a recognized city. Please enter a valid city name.`);
+        setError(`"${normalizeUserInput(inputValue)}" is not a recognized city. Please enter a valid city name.`);
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to verify city. Please try again.');
@@ -58,9 +61,18 @@ function CityInput({
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+    const rawValue = e.target.value;
+    setInputValue(rawValue);
     if (state.error) {
       setError(null);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Format the city name when user finishes typing (on blur)
+    if (inputValue.trim()) {
+      const formatted = normalizeUserInput(inputValue);
+      setInputValue(formatted);
     }
   };
 
@@ -71,7 +83,7 @@ function CityInput({
       {state.loading ? (
         <LoadingSpinner 
           type="searching" 
-          message={`Verifying ${inputValue}...`} 
+          message={`Verifying ${normalizeUserInput(inputValue)}...`} 
         />
       ) : (
         <>
@@ -86,6 +98,7 @@ function CityInput({
                 type="text"
                 value={inputValue}
                 onChange={handleInputChange}
+                onBlur={handleInputBlur}
                 placeholder="e.g., Paris, Tokyo, New York"
                 disabled={state.loading}
                 autoFocus

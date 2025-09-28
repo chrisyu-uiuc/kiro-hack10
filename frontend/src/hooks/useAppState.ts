@@ -47,25 +47,61 @@ export function useAppState() {
   }, [updateState]);
 
   const setSpots = useCallback((spots: Spot[]) => {
-    updateState({ spots, selectedSpotIds: [], noMoreSpots: false });
+    // Ensure we don't exceed 40 spots even on initial load
+    const limitedSpots = spots.slice(0, 40);
+    console.log(`🔍 Setting ${limitedSpots.length} spots (limited from ${spots.length})`);
+    updateState({ 
+      spots: limitedSpots, 
+      selectedSpotIds: [], 
+      noMoreSpots: limitedSpots.length >= 40 
+    });
   }, [updateState]);
 
   const addMoreSpots = useCallback((newSpots: Spot[], noMoreSpots?: boolean) => {
     console.log(`🔍 Adding ${newSpots.length} spots, noMoreSpots: ${noMoreSpots}`);
     setState(prev => {
-      const allSpots = [...prev.spots, ...newSpots];
+      // Check if we're already at the 40-spot limit
+      if (prev.spots.length >= 40) {
+        console.log(`🚫 Already at maximum of 40 spots, not adding more`);
+        return {
+          ...prev,
+          noMoreSpots: true
+        };
+      }
+      
+      // Get existing spot IDs to check for duplicates
+      const existingSpotIds = new Set(prev.spots.map(spot => spot.id));
+      
+      // Filter out duplicates and limit to remaining slots
+      const remainingSlots = 40 - prev.spots.length;
+      const uniqueNewSpots = newSpots
+        .filter(spot => !existingSpotIds.has(spot.id))
+        .slice(0, remainingSlots);
+      
+      console.log(`🔍 Filtered ${newSpots.length} new spots to ${uniqueNewSpots.length} unique spots (${remainingSlots} slots remaining)`);
+      
+      // If no unique spots to add, mark as no more spots
+      if (uniqueNewSpots.length === 0) {
+        console.log(`🚫 No unique spots to add, marking noMoreSpots as true`);
+        return {
+          ...prev,
+          noMoreSpots: true
+        };
+      }
+      
+      const allSpots = [...prev.spots, ...uniqueNewSpots];
       const validSpotIds = allSpots.map(spot => spot.id);
       
       // Filter out any selected IDs that don't exist in the current spots
       const validSelectedSpotIds = prev.selectedSpotIds.filter(id => validSpotIds.includes(id));
       
-      console.log(`🔍 Filtered selectedSpotIds from ${prev.selectedSpotIds.length} to ${validSelectedSpotIds.length}`);
+      console.log(`🔍 Added ${uniqueNewSpots.length} unique spots. Total: ${allSpots.length}/40`);
       
       return {
         ...prev,
         spots: allSpots,
         selectedSpotIds: validSelectedSpotIds,
-        noMoreSpots: noMoreSpots || prev.noMoreSpots
+        noMoreSpots: noMoreSpots || allSpots.length >= 40
       };
     });
   }, []);

@@ -6,7 +6,6 @@ import { useAppState } from '../hooks/useAppState';
 import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 import { Spot } from '../types';
 import ProgressIndicator from './ProgressIndicator';
-import SmallHeader from './SmallHeader';
 
 interface SpotSelectionProps extends ReturnType<typeof useAppState> { }
 
@@ -95,12 +94,19 @@ function SpotSelection({
       const result = await ApiService.loadMoreSpots(state.sessionId);
       console.log(`🔍 Load more response:`, result);
       
+      // Store the current count before adding
+      const previousCount = state.spots.length;
+      
       if (result.spots.length > 0) {
         addMoreSpots(result.spots, result.noMoreSpots);
         // Clear any previous error messages
         if (state.error) {
           setError(null);
         }
+        
+        // Check if we actually added any spots after the addMoreSpots call
+        // This will be handled by the state update, but we can log it
+        console.log(`🔍 Attempted to add ${result.spots.length} spots from API`);
       } else {
         // Even if no spots returned, we need to update the noMoreSpots state
         if (result.noMoreSpots || result.reachedLimit) {
@@ -114,7 +120,7 @@ function SpotSelection({
           if (result.message) {
             setError(result.message);
           } else {
-            setError('No new spots found. You may have seen all available recommendations.');
+            setError('No new unique spots found. All available recommendations have been loaded.');
           }
         }
       }
@@ -194,11 +200,6 @@ function SpotSelection({
         {selectedCount > 0 && (
           <span style={{ color: '#646cff', fontWeight: 'bold' }}>
             {' '}({selectedCount} selected)
-          </span>
-        )}
-        {totalSpots >= 40 && (
-          <span style={{ color: '#f39c12', fontWeight: 'bold', marginLeft: '8px' }}>
-            (Maximum reached!)
           </span>
         )}
       </p>
@@ -284,17 +285,17 @@ function SpotSelection({
           textAlign: 'center',
           margin: '20px 0',
           padding: '16px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '8px',
-          border: '1px solid #e9ecef'
+          backgroundColor: 'var(--primary-50)',
+          borderRadius: 'var(--radius-lg)',
+          color: 'var(--primary-700)'
         }}>
-          <div style={{ color: '#f39c12', fontWeight: 'bold', fontSize: '16px' }}>
-            {totalSpots >= 40 ? '🎉 Maximum spots reached!' : '✨ All unique spots found!'}
+          <div style={{ fontWeight: '600', fontSize: '16px', marginBottom: '4px' }}>
+            {totalSpots >= 40 ? '🎉 All 40 spots loaded!' : '✨ All available spots found!'}
           </div>
-          <div style={{ color: '#666', fontSize: '14px', marginTop: '4px' }}>
+          <div style={{ fontSize: '14px', opacity: 0.8 }}>
             {totalSpots >= 40 
-              ? 'You have 40 amazing spots to choose from. That\'s plenty for an incredible trip!'
-              : `You have ${totalSpots} unique spots for ${state.city}. We've found all the best recommendations available!`
+              ? 'Ready to create your perfect itinerary'
+              : `${totalSpots} unique recommendations for ${state.city}`
             }
           </div>
         </div>

@@ -5,7 +5,6 @@ import { ApiService } from '../services/api';
 import { useAppState } from '../hooks/useAppState';
 import { useScrollToTop, scrollToTop } from '../hooks/useScrollToTop';
 import ProgressIndicator from './ProgressIndicator';
-import SmallHeader from './SmallHeader';
 
 interface ItineraryDisplayProps extends ReturnType<typeof useAppState> { }
 
