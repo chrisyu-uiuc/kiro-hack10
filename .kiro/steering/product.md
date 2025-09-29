@@ -2,30 +2,25 @@
 
 ## Travel Itinerary Generator
 
-A web application that creates personalized travel itineraries using AWS Bedrock Agent. The application follows a three-step user flow:
+A production-ready web application that creates personalized travel itineraries using AWS Bedrock Agent and Google Places API. The application follows a three-step user flow: city input, spot selection with detailed information popups, and comprehensive itinerary generation.
 
-1. **City Input & Verification** - Users enter a destination city which is validated
-2. **Spot Selection** - Users choose from AI-recommended attractions and points of interest
-3. **Itinerary Generation** - A complete travel itinerary is generated based on selected spots
+## Core Features
 
-## Key Features
+- **AI-Powered Recommendations**: AWS Bedrock Agent integration for intelligent travel suggestions
+- **Detailed Spot Information**: Google Places API integration with photos, reviews, ratings, and practical information
+- **Interactive Photo Galleries**: Optimized image loading with lazy loading and caching
+- **Multi-Step Flow**: Intuitive 3-step process from city selection to complete itinerary
+- **Session Management**: Maintains state across the user journey with performance caching
+- **Mobile-Optimized**: Touch-friendly interface with swipe gestures and responsive design
 
-- AI-powered destination recommendations using AWS Bedrock Agent
-- Session-based user flow with state management
-- Responsive React frontend with TypeScript
-- RESTful API backend with Express.js
-- Flexible CORS configuration for multi-environment deployment
-- Health monitoring and error handling
+## User Journey
 
-## AWS Integration
+1. **City Input**: Users enter and verify a destination city using AWS Bedrock Agent
+2. **Spot Selection**: Choose from 10-20 AI-generated recommendations with detailed information popups
+3. **Itinerary Generation**: Receive detailed travel plans with timing and transportation
 
-- **AWS Bedrock Agent**: Core AI service for travel recommendations
-- **Agent ID**: BTATPBP5VG
-- **Alias ID**: JFTVDFJYFF
-- **Region**: us-east-1
+## Key Integrations
 
-## Target Deployment
-
-- Development: Local with hot reloading
-- Production: AWS EC2 with automated deployment scripts
-- Alternative: Vercel (frontend) + Railway (backend)
+- **AWS Bedrock Agent**: Nova Pro 1.0 model for travel planning assistance
+- **Google Places API**: Comprehensive location data, photos, and reviews
+- **Session Storage**: Maintains user state across the multi-step flow

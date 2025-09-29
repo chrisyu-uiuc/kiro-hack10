@@ -585,7 +585,7 @@ Do not include any text before or after the JSON. Keep descriptions short. Categ
 TIMING REQUIREMENTS:
 - Plan for a full day starting at 9:00 AM
 - Include realistic visit durations based on attraction type (museums: 2-3 hours, parks: 1-2 hours, restaurants: 1 hour, viewpoints: 30-45 minutes)
-- Add 15-30 minutes travel time between locations depending on distance
+- Calculate realistic travel times between locations based on actual distance and transportation mode
 - Group nearby attractions together to minimize travel time
 - Include a lunch break (1 hour) around 12:00-1:00 PM
 - End the day by 6:00 PM
@@ -600,7 +600,7 @@ IMPORTANT: Your response must be ONLY valid JSON in this exact format:
       "time": "9:00 AM - 10:30 AM",
       "spot": "Spot Name",
       "duration": "1.5 hours",
-      "transportation": "15 min walk from previous location",
+      "transportation": "Travel time varies by distance and mode",
       "notes": "Best visited in the morning. Arrive early to avoid crowds."
     }
   ]
@@ -718,7 +718,7 @@ Do not include any text before or after the JSON.`;
                 time: timeString,
                 spot: spot.name,
                 duration,
-                transportation: index === 0 ? 'Start here' : '15-20 min walk/transit',
+                transportation: index === 0 ? 'Start here' : 'Travel time calculated by route optimizer',
                 notes: `Visit ${spot.name} - ${spot.description.substring(0, 80)}${spot.description.length > 80 ? '...' : ''}`
             };
         });

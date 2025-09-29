@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { AppState, Spot, Itinerary } from '../types';
+import { AppState, Spot, Itinerary, OptimizedItinerary } from '../types';
 
 const initialState: AppState = {
   currentStep: 'city',
@@ -8,6 +8,7 @@ const initialState: AppState = {
   spots: [],
   selectedSpotIds: [],
   itinerary: null,
+  optimizedItinerary: null,
   loading: false,
   loadingMore: false,
   loadingItinerary: false,
@@ -130,6 +131,10 @@ export function useAppState() {
     updateState({ itinerary });
   }, [updateState]);
 
+  const setOptimizedItinerary = useCallback((optimizedItinerary: OptimizedItinerary) => {
+    updateState({ optimizedItinerary });
+  }, [updateState]);
+
   const goToStep = useCallback((step: AppState['currentStep']) => {
     updateState({ currentStep: step, error: null });
   }, [updateState]);
@@ -169,6 +174,7 @@ export function useAppState() {
     addMoreSpots,
     toggleSpotSelection,
     setItinerary,
+    setOptimizedItinerary,
     goToStep,
     resetState,
     getSelectedSpots,

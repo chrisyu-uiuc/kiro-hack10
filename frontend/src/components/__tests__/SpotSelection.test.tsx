@@ -55,6 +55,7 @@ const mockAppState = {
   spots: mockSpots,
   selectedSpotIds: [],
   itinerary: null,
+  optimizedItinerary: null,
   loading: false,
   loadingMore: false,
   loadingItinerary: false,
@@ -63,15 +64,21 @@ const mockAppState = {
 };
 
 const mockAppStateFunctions = {
+  updateState: vi.fn(),
   setLoading: vi.fn(),
   setLoadingMore: vi.fn(),
   setLoadingItinerary: vi.fn(),
   setError: vi.fn(),
+  setCity: vi.fn(),
+  setSessionId: vi.fn(),
   setSpots: vi.fn(),
   addMoreSpots: vi.fn(),
   toggleSpotSelection: vi.fn(),
+  setItinerary: vi.fn(),
+  setOptimizedItinerary: vi.fn(),
   getSelectedSpots: vi.fn(() => []),
   goToStep: vi.fn(),
+  resetState: vi.fn(),
   cleanupSelectedSpotIds: vi.fn()
 };
 

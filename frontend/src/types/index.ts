@@ -20,8 +20,58 @@ export interface ScheduleItem {
   time: string;
   spot: string;
   duration: string;
-  transportation: string;
-  notes: string;
+  transportation?: string;
+  notes?: string;
+  // Enhanced fields for optimized itineraries
+  arrivalTime?: string;
+  departureTime?: string;
+  travelTime?: string;
+  navigationUrl?: string;
+}
+
+// Enhanced itinerary types for Google Maps optimization
+export interface OptimizedItinerary {
+  title: string;
+  totalDuration: string;
+  totalTravelTime: string;
+  schedule: ScheduleItem[];
+  route: OptimizedRoute;
+}
+
+export interface OptimizedRoute {
+  orderedSpots: string[];
+  totalTravelTime: number; // in seconds
+  totalDistance: number; // in meters
+  routeSteps: RouteStep[];
+}
+
+export interface RouteStep {
+  from: string;
+  to: string;
+  travelTime: TravelTime;
+  mode: TravelMode;
+  navigationUrl: string;
+}
+
+export interface TravelTime {
+  duration: number; // seconds
+  distance: number; // meters
+  durationText: string; // "15 mins"
+  distanceText: string; // "1.2 km"
+}
+
+// Travel mode and optimization options
+export type TravelMode = 'walking' | 'driving' | 'transit';
+
+export interface ItineraryOptions {
+  travelMode?: TravelMode;
+  startTime?: string;
+  visitDuration?: number; // minutes per spot
+  includeBreaks?: boolean;
+  multiDay?: boolean;
+  hotelLocation?: string;
+  dailyStartTime?: string;
+  dailyEndTime?: string;
 }
 
 export interface AppState {
@@ -31,6 +81,7 @@ export interface AppState {
   spots: Spot[];
   selectedSpotIds: string[];
   itinerary: Itinerary | null;
+  optimizedItinerary: OptimizedItinerary | null;
   loading: boolean;
   loadingMore: boolean;
   loadingItinerary: boolean;
@@ -78,6 +129,22 @@ export interface ItineraryGenerationResponse {
   itinerary: Itinerary;
   spotsCount: number;
   message: string;
+}
+
+export interface OptimizedItineraryResponse {
+  sessionId: string;
+  city: string;
+  itinerary: OptimizedItinerary;
+  spotsCount: number;
+  message: string;
+  fallbackUsed?: boolean;
+}
+
+export interface EnhancedItineraryResult {
+  success: boolean;
+  itinerary?: OptimizedItinerary;
+  error?: string;
+  fallbackUsed?: boolean;
 }
 
 export interface SpotDetailsResponse {

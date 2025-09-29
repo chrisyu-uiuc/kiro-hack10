@@ -83,6 +83,9 @@ travel-itinerary-generator/
 
    # Google Places API Configuration
    # GOOGLE_PLACES_API_KEY=
+   
+   # Google Maps API Configuration (for route optimization)
+   # GOOGLE_MAPS_API_KEY=
 
    # Server Configuration
    # PORT=3001
@@ -197,28 +200,40 @@ Ensure your AWS credentials have the necessary permissions:
 - `bedrock:InvokeAgent`
 - Access to the specified Bedrock Agent
 
-### Google Places API Setup
-The application integrates with Google Places API for detailed spot information:
+### Google Maps Platform Setup
+The application integrates with Google Maps Platform for detailed spot information and route optimization:
 
 1. **Enable APIs**: Enable the following APIs in Google Cloud Console:
-   - Places API (New)
-   - Places API
-   - Maps JavaScript API (optional, for enhanced features)
+   - **Places API** (for spot details, photos, reviews)
+   - **Geocoding API** (for converting addresses to coordinates)
+   - **Distance Matrix API** (for calculating travel times)
+   - **Routes API** (for advanced routing - optional but recommended)
 
-2. **Create API Key**: Generate an API key with the following restrictions:
-   - **Application restrictions**: HTTP referrers (for production)
-   - **API restrictions**: Limit to Places API
+2. **Create API Keys**: Generate API keys with appropriate restrictions:
+   - **Google Places API Key**: For frontend spot details
+   - **Google Maps API Key**: For backend routing and optimization
 
-3. **Configure Environment**: Add your API key to the backend `.env` file:
+3. **Configure Environment**: Add your API keys to the backend `.env` file:
    ```
-   GOOGLE_PLACES_API_KEY=your_api_key_here
+   GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
+   GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
    ```
 
-#### Google Places Features
+4. **Validate Configuration**: Test your API setup:
+   ```bash
+   cd backend
+   npm run validate-google-maps
+   ```
+
+#### Google Maps Platform Features
 - **Place Details**: Photos, reviews, ratings, opening hours
-- **Place Search**: Find places by name and location
-- **Photo Service**: Optimized image loading with multiple sizes
+- **Route Optimization**: AI-powered route optimization using TSP algorithms
+- **Real Travel Times**: Accurate travel time calculations between locations
+- **Multiple Travel Modes**: Walking, driving, and public transit support
+- **Navigation Integration**: Direct links to Google Maps navigation
 - **Comprehensive Error Handling**: Graceful fallbacks for API failures
+
+> **📋 Detailed Setup Guide**: See [deployment/environment-setup.md](deployment/environment-setup.md) for complete Google Maps Platform setup instructions, API key configuration, and cost optimization tips.
 
 ### Security Notes
 ⚠️ **Never commit API keys to version control**. Always use environment variables and ensure your `.env` files are in `.gitignore`.
@@ -306,6 +321,8 @@ Both projects use TypeScript path mapping for clean imports:
 - **[Spot Information Feature Guide](SPOT_INFORMATION_FEATURE.md)** - Comprehensive documentation for the spot information popup feature
 - **[Project Completion Summary](PROJECT_COMPLETION_SUMMARY.md)** - Complete overview of implemented features and achievements
 - **[Deployment Guides](deployment/)** - Production deployment instructions for various platforms
+- **[Google Maps Optimization API](backend/docs/api-optimization.md)** - Complete API documentation for itinerary optimization endpoints
+- **[API Quick Reference](backend/docs/api-quick-reference.md)** - Quick reference guide for developers
 
 ## 📄 License
 

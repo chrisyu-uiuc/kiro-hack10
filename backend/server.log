@@ -1,0 +1,98 @@
+
+> travel-itinerary-backend@1.0.0 start
+> node dist/server.js
+
+🗺️ [GoogleMaps] Google Maps Service initialized with API key 
+🚀 Server running on port 3001 in development mode
+📍 Health check available at http://localhost:3001/health
+🌐 Network access available at http://192.168.8.62:3001/health
+📥 POST /api/enhanced-itinerary - 127.0.0.1
+📤 ❌ POST /api/enhanced-itinerary - 404 - 5ms
+Error details: {
+  timestamp: '2025-09-29T01:52:16.797Z',
+  method: 'POST',
+  url: '/api/enhanced-itinerary',
+  userAgent: 'node-fetch',
+  ip: '127.0.0.1',
+  sessionId: undefined,
+  statusCode: 404,
+  responseTime: 5,
+  body: { city: 'Osaka', spots: [ [Object], [Object], [Object] ] },
+  query: {},
+  params: { '0': '/api/enhanced-itinerary' }
+}
+📥 GET /api/health - 127.0.0.1
+📤 ❌ GET /api/health - 404 - 2ms
+Error details: {
+  timestamp: '2025-09-29T01:52:21.725Z',
+  method: 'GET',
+  url: '/api/health',
+  userAgent: 'curl/8.7.1',
+  ip: '127.0.0.1',
+  sessionId: undefined,
+  statusCode: 404,
+  responseTime: 2,
+  body: {},
+  query: {},
+  params: { '0': '/api/health' }
+}
+📥 GET /health - 127.0.0.1
+📤 ✅ GET /health - 200 - 1ms
+📥 POST /api/itinerary/optimize - 127.0.0.1
+📤 ❌ POST /api/itinerary/optimize - 400 - 3ms
+Error details: {
+  timestamp: '2025-09-29T01:52:40.841Z',
+  method: 'POST',
+  url: '/api/itinerary/optimize',
+  userAgent: 'node-fetch',
+  ip: '127.0.0.1',
+  sessionId: undefined,
+  statusCode: 400,
+  responseTime: 3,
+  body: { city: 'Osaka', spots: [ [Object], [Object], [Object] ] },
+  query: {},
+  params: {}
+}
+📥 POST /api/itinerary/optimize - 127.0.0.1
+📤 ❌ POST /api/itinerary/optimize - 404 - 1ms
+Error details: {
+  timestamp: '2025-09-29T01:53:06.426Z',
+  method: 'POST',
+  url: '/api/itinerary/optimize',
+  userAgent: 'node-fetch',
+  ip: '127.0.0.1',
+  sessionId: undefined,
+  statusCode: 404,
+  responseTime: 1,
+  body: {
+    sessionId: 'test-session-1759110786328',
+    city: 'Osaka',
+    selectedSpots: [ [Object], [Object], [Object] ],
+    travelMode: 'transit',
+    startTime: '09:00',
+    visitDuration: 60,
+    includeBreaks: true,
+    multiDay: false
+  },
+  query: {},
+  params: {}
+}
+📥 POST /api/city/verify-city - 127.0.0.1
+📤 ❌ POST /api/city/verify-city - 404 - 0ms
+Error details: {
+  timestamp: '2025-09-29T01:53:21.636Z',
+  method: 'POST',
+  url: '/api/city/verify-city',
+  userAgent: 'curl/8.7.1',
+  ip: '127.0.0.1',
+  sessionId: undefined,
+  statusCode: 404,
+  responseTime: 0,
+  body: { city: 'Osaka' },
+  query: {},
+  params: { '0': '/api/city/verify-city' }
+}
+SIGTERM received, shutting down gracefully
+Process terminated
+SIGTERM received, shutting down gracefully
+Process terminated

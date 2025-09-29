@@ -7,6 +7,8 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import cityRoutes from './routes/cityRoutes.js';
 import spotRoutes from './routes/spotRoutes.js';
+import enhancedItineraryRoutes from './routes/enhancedItineraryRoutes.js';
+import monitoringRoutes from './routes/monitoringRoutes.js';
 
 const app = express();
 
@@ -89,6 +91,8 @@ app.get('/health', (_req, res) => {
 // API routes
 app.use('/api', cityRoutes);
 app.use('/api', spotRoutes);
+app.use('/api/itinerary', enhancedItineraryRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
 // 404 handler for unmatched routes
 app.use('*', (req, res) => {

@@ -30,6 +30,7 @@ export interface SessionData {
   allSpots: Spot[];
   selectedSpots: Spot[];
   itinerary: Itinerary | null;
+  optimizedItinerary?: any; // For Google Maps optimized itineraries
   createdAt: Date;
   lastAccessedAt: Date;
 }

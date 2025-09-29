@@ -573,8 +573,44 @@ router.post('/generate-itinerary', async (req: Request, res: Response, next: Nex
       });
     }
 
-    // Generate itinerary using Bedrock Agent
-    const itinerary = await bedrockService.generateItinerary(session.selectedSpots, sessionId);
+    // Generate optimized itinerary using Google Maps integration
+    const { EnhancedItineraryService } = await import('../services/EnhancedItineraryService.js');
+    const enhancedItineraryService = new EnhancedItineraryService();
+    
+    console.log(`🚀 Generating optimized itinerary for ${session.selectedSpots.length} spots in ${session.city}`);
+    
+    const result = await enhancedItineraryService.generateEnhancedItinerary(
+      sessionId,
+      session.selectedSpots, // Use the existing selectedSpots from session
+      session.city || 'Unknown City',
+      {
+        travelMode: 'walking',
+        startTime: '09:00',
+        visitDuration: 60,
+        includeBreaks: true
+      }
+    );
+    
+    let itinerary;
+    if (result.success && result.itinerary) {
+      // Convert OptimizedItinerary to regular Itinerary for session storage
+      itinerary = {
+        title: result.itinerary.title,
+        totalDuration: result.itinerary.totalDuration,
+        schedule: result.itinerary.schedule.map(item => ({
+          time: item.time,
+          spot: item.spot,
+          duration: item.duration,
+          transportation: item.transportation || '',
+          notes: item.notes || ''
+        }))
+      };
+      console.log(`✅ Successfully generated optimized itinerary with real travel times`);
+    } else {
+      console.log(`⚠️ Optimized itinerary failed, falling back to basic Bedrock itinerary`);
+      // Fallback to basic Bedrock itinerary if optimization fails
+      itinerary = await bedrockService.generateItinerary(session.selectedSpots, sessionId);
+    }
 
     // Store itinerary in session
     const updateSuccess = sessionStorage.updateSession(sessionId, { itinerary });

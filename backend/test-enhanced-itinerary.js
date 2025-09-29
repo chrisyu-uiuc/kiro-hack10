@@ -1,97 +1,104 @@
-#!/usr/bin/env node
-
 /**
- * Test script for enhanced itinerary generation with realistic timing constraints
- * This script validates that the enhanced Bedrock Agent prompts work correctly
+ * Simple test script to verify EnhancedItineraryService integration
  */
 
-import { BedrockAgentService } from './dist/services/BedrockAgentService.js';
+import { EnhancedItineraryService } from './dist/services/EnhancedItineraryService.js';
 
 async function testEnhancedItinerary() {
-  console.log('🧪 Testing Enhanced Itinerary Generation...\n');
+  console.log('🧪 Testing EnhancedItineraryService...');
   
-  const service = new BedrockAgentService();
+  const service = new EnhancedItineraryService();
   
-  // Test spots from Tokyo
-  const testSpots = [
+  // Test data
+  const mockSpots = [
     {
       id: 'spot-1',
-      name: 'Tokyo Skytree',
+      name: 'Tokyo Tower',
       category: 'Viewpoint',
-      location: 'Sumida',
-      description: 'The tallest tower in the world, offering panoramic views of Tokyo.'
+      location: 'Minato',
+      description: 'Iconic tower with city views',
+      duration: '1-2 hours'
     },
     {
       id: 'spot-2',
       name: 'Senso-ji Temple',
       category: 'Religious Site',
       location: 'Asakusa',
-      description: 'Tokyo\'s oldest temple, a popular site for both tourists and locals.'
+      description: 'Historic Buddhist temple',
+      duration: '1 hour'
     },
     {
       id: 'spot-3',
-      name: 'Tokyo National Museum',
-      category: 'Museum',
-      location: 'Ueno',
-      description: 'The oldest and largest museum in Japan, showcasing a vast collection of art and artifacts.'
-    },
-    {
-      id: 'spot-4',
-      name: 'Shinjuku Gyoen',
-      category: 'Park',
-      location: 'Shinjuku',
-      description: 'A large park with beautiful gardens, offering a peaceful retreat in the city.'
+      name: 'Shibuya Crossing',
+      category: 'Attraction',
+      location: 'Shibuya',
+      description: 'Famous pedestrian crossing',
+      duration: '30 minutes'
     }
   ];
 
   try {
-    console.log('📍 Test Spots:');
-    testSpots.forEach(spot => {
-      console.log(`  - ${spot.name} (${spot.category}) - ${spot.location}`);
-    });
-    console.log('');
+    // Test 1: Validate options
+    console.log('\n1️⃣ Testing option validation...');
+    const validOptions = {
+      travelMode: 'walking',
+      startTime: '09:00',
+      visitDuration: 60,
+      includeBreaks: true
+    };
+    
+    const validation = service.validateOptions(validOptions);
+    console.log('✅ Valid options:', validation.valid);
+    
+    const invalidOptions = {
+      startTime: '25:00',
+      visitDuration: 5
+    };
+    
+    const invalidValidation = service.validateOptions(invalidOptions);
+    console.log('❌ Invalid options detected:', !invalidValidation.valid);
+    console.log('   Errors:', invalidValidation.errors);
 
-    const itinerary = await service.generateItinerary(testSpots, 'test-enhanced-session');
-    
-    console.log('✅ Enhanced Itinerary Generated Successfully!\n');
-    console.log(`📋 ${itinerary.title}`);
-    console.log(`⏱️  Total Duration: ${itinerary.totalDuration}\n`);
-    
-    console.log('📅 Schedule:');
-    itinerary.schedule.forEach((item, index) => {
-      console.log(`${index + 1}. ${item.time} - ${item.spot}`);
-      console.log(`   Duration: ${item.duration}`);
-      console.log(`   Transportation: ${item.transportation}`);
-      if (item.notes) {
-        console.log(`   Notes: ${item.notes}`);
+    // Test 2: Generate enhanced itinerary (will use fallback due to no real API keys)
+    console.log('\n2️⃣ Testing itinerary generation...');
+    const result = await service.generateEnhancedItinerary(
+      'test-session-' + Date.now(),
+      mockSpots,
+      'Tokyo',
+      {
+        travelMode: 'walking',
+        startTime: '09:00',
+        visitDuration: 90,
+        includeBreaks: true
       }
-      console.log('');
-    });
+    );
 
-    // Validate enhanced features
-    console.log('🔍 Validation Results:');
+    console.log('📊 Generation result:');
+    console.log('   Success:', result.success);
+    console.log('   Fallback used:', result.fallbackUsed);
     
-    const hasRealisticTiming = itinerary.schedule.some(item => 
-      item.time.includes('AM') || item.time.includes('PM')
-    );
-    console.log(`  ✅ Realistic timing: ${hasRealisticTiming ? 'PASS' : 'FAIL'}`);
-    
-    const hasProperDurations = itinerary.schedule.some(item => 
-      item.duration.includes('hour') || item.duration.includes('min')
-    );
-    console.log(`  ✅ Proper durations: ${hasProperDurations ? 'PASS' : 'FAIL'}`);
-    
-    const hasTransportation = itinerary.schedule.some(item => 
-      item.transportation && item.transportation !== 'Walking'
-    );
-    console.log(`  ✅ Transportation info: ${hasTransportation ? 'PASS' : 'FAIL'}`);
-    
-    const hasNotes = itinerary.schedule.some(item => 
-      item.notes && item.notes.length > 0
-    );
-    console.log(`  ✅ Helpful notes: ${hasNotes ? 'PASS' : 'FAIL'}`);
-    
-    console.log('\n🎉 Enhanced itinerary generation test completed successfully!');
+    if (result.itinerary) {
+      console.log('   Title:', result.itinerary.title);
+      console.log('   Total duration:', result.itinerary.totalDuration);
+      console.log('   Schedule items:', result.itinerary.schedule.length);
+      console.log('   Route spots:', result.itinerary.route.orderedSpots.length);
+      
+      // Show first schedule item
+      if (result.itinerary.schedule.length > 0) {
+        const firstItem = result.itinerary.schedule[0];
+        console.log('   First item:', {
+          time: firstItem.time,
+          spot: firstItem.spot,
+          duration: firstItem.duration
+        });
+      }
+    }
+
+    if (result.error) {
+      console.log('   Error:', result.error);
+    }
+
+    console.log('\n✅ EnhancedItineraryService test completed successfully!');
     
   } catch (error) {
     console.error('❌ Test failed:', error.message);
@@ -99,4 +106,5 @@ async function testEnhancedItinerary() {
   }
 }
 
+// Run the test
 testEnhancedItinerary();

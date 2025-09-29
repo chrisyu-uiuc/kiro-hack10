@@ -19,9 +19,67 @@ Deploy your Travel Itinerary Generator on AWS EC2 with:
 - Domain name (e.g., `travel-planner.com`)
 - Access to DNS management
 
-## Step 1: Launch EC2 Instance
+### 3. Google Maps Platform Setup
+- Google Cloud Platform account
+- Google Maps Platform project with billing enabled
+- API keys with the following APIs enabled:
+  - **Google Places API** (for spot details, photos, reviews)
+  - **Geocoding API** (for converting addresses to coordinates)
+  - **Distance Matrix API** (for calculating travel times)
+  - **Routes API** (for advanced routing - optional but recommended)
+- API key restrictions configured for security
 
-### 1.1 Create EC2 Instance
+> **📋 Detailed Setup Guide**: See [Environment Configuration Guide](./environment-setup.md) for complete Google Maps Platform setup instructions, API key configuration, and cost optimization tips.
+
+## Step 1: Google Maps Platform Setup
+
+### 1.1 Create Google Cloud Project
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable billing for the project
+
+### 1.2 Enable Required APIs
+Enable the following APIs in the Google Cloud Console:
+```bash
+# Using gcloud CLI (optional)
+gcloud services enable geocoding-backend.googleapis.com
+gcloud services enable distance-matrix-backend.googleapis.com
+gcloud services enable routes.googleapis.com
+gcloud services enable places-backend.googleapis.com
+```
+
+Or enable via Console:
+- **Geocoding API**: For converting addresses to coordinates
+- **Distance Matrix API**: For calculating travel times between locations
+- **Routes API**: For advanced routing and transit information
+- **Places API**: For location details, photos, and reviews
+
+### 1.3 Create API Keys
+1. Go to **APIs & Services > Credentials**
+2. Click **Create Credentials > API Key**
+3. Create two API keys (recommended for security):
+   - **Google Places API Key**: For frontend and spot details
+   - **Google Maps API Key**: For backend routing and optimization
+
+### 1.4 Secure API Keys
+**For Google Places API Key (Frontend)**:
+- Add HTTP referrer restrictions (your domain)
+- Restrict to: Places API
+
+**For Google Maps API Key (Backend)**:
+- Add IP address restrictions (your EC2 IP)
+- Restrict to: Geocoding API, Distance Matrix API, Routes API
+
+### 1.5 Set Usage Quotas (Optional)
+Set daily quotas to control costs:
+- **Geocoding**: 1,000 requests/day
+- **Distance Matrix**: 1,000 requests/day
+- **Routes**: 500 requests/day
+- **Places**: 1,000 requests/day
+
+## Step 2: Launch EC2 Instance
+
+### 2.1 Create EC2 Instance
 ```bash
 # Launch Ubuntu 24.04 LTS instance
 aws ec2 run-instances \
@@ -33,34 +91,34 @@ aws ec2 run-instances \
   --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=travel-itinerary-server}]'
 ```
 
-### 1.2 Configure Security Group
+### 2.2 Configure Security Group
 Allow these ports:
 - **22** (SSH) - Your IP only
 - **80** (HTTP) - 0.0.0.0/0
 - **443** (HTTPS) - 0.0.0.0/0
 - **3001** (API) - 0.0.0.0/0 (temporary, will be proxied)
 
-### 1.3 Allocate Elastic IP
+### 2.3 Allocate Elastic IP
 ```bash
 # Allocate and associate Elastic IP
 aws ec2 allocate-address --domain vpc
 aws ec2 associate-address --instance-id i-xxxxxxxxx --allocation-id eipalloc-xxxxxxxxx
 ```
 
-## Step 2: Server Setup
+## Step 3: Server Setup
 
-### 2.1 Connect to Instance
+### 3.1 Connect to Instance
 ```bash
 ssh -i your-key.pem ubuntu@your-elastic-ip
 ```
 
-### 2.2 Update System
+### 3.2 Update System
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl wget git unzip build-essential
 ```
 
-### 2.3 Install Node.js
+### 3.3 Install Node.js
 ```bash
 # Install Node.js 20.x (LTS for Ubuntu 24.04)
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -74,28 +132,28 @@ npm --version
 # sudo snap install node --classic
 ```
 
-### 2.4 Install PM2
+### 3.4 Install PM2
 ```bash
 sudo npm install -g pm2
 ```
 
-### 2.5 Install Nginx
+### 3.5 Install Nginx
 ```bash
 sudo apt install -y nginx
 sudo systemctl enable nginx
 sudo systemctl start nginx
 ```
 
-## Step 3: Deploy Application
+## Step 4: Deploy Application
 
-### 3.1 Clone Repository
+### 4.1 Clone Repository
 ```bash
 cd /home/ubuntu
 git clone https://github.com/your-username/your-repo.git
 cd your-repo
 ```
 
-### 3.2 Setup Backend
+### 4.2 Setup Backend
 ```bash
 cd backend
 
@@ -115,6 +173,7 @@ AWS_SECRET_ACCESS_KEY=your_secret_key
 BEDROCK_AGENT_ID=BTATPBP5VG
 BEDROCK_AGENT_ALIAS_ID=JFTVDFJYFF
 GOOGLE_PLACES_API_KEY=your_google_places_api_key
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 FRONTEND_URL=https://your-domain.com
 EOF
 
@@ -124,7 +183,7 @@ pm2 save
 pm2 startup
 ```
 
-### 3.3 Setup Frontend
+### 4.3 Setup Frontend
 ```bash
 cd ../frontend
 
@@ -144,9 +203,9 @@ sudo cp -r dist/* /var/www/html/
 sudo chown -R www-data:www-data /var/www/html
 ```
 
-## Step 4: Configure Nginx
+## Step 5: Configure Nginx
 
-### 4.1 Create Nginx Configuration
+### 5.1 Create Nginx Configuration
 ```bash
 sudo tee /etc/nginx/sites-available/travel-itinerary << 'EOF'
 server {
@@ -224,16 +283,16 @@ server {
 EOF
 ```
 
-### 4.2 Enable Site
+### 5.2 Enable Site
 ```bash
 sudo ln -s /etc/nginx/sites-available/travel-itinerary /etc/nginx/sites-enabled/
 sudo rm /etc/nginx/sites-enabled/default
 sudo nginx -t
 ```
 
-## Step 5: SSL Certificate with Let's Encrypt
+## Step 6: SSL Certificate with Let's Encrypt
 
-### 5.1 Install Certbot
+### 6.1 Install Certbot
 ```bash
 # Ubuntu 24.04 uses snapd for certbot installation
 sudo snap install core; sudo snap refresh core
@@ -246,25 +305,25 @@ sudo ln -s /snap/bin/certbot /usr/bin/certbot
 # sudo apt install -y certbot python3-certbot-nginx
 ```
 
-### 5.2 Obtain SSL Certificate
+### 6.2 Obtain SSL Certificate
 ```bash
 sudo certbot --nginx -d your-domain.com -d www.your-domain.com
 ```
 
-### 5.3 Auto-renewal
+### 6.3 Auto-renewal
 ```bash
 sudo systemctl enable certbot.timer
 sudo systemctl start certbot.timer
 ```
 
-## Step 6: Configure Domain (Route 53)
+## Step 7: Configure Domain (Route 53)
 
-### 6.1 Create Hosted Zone
+### 7.1 Create Hosted Zone
 ```bash
 aws route53 create-hosted-zone --name your-domain.com --caller-reference $(date +%s)
 ```
 
-### 6.2 Create DNS Records
+### 7.2 Create DNS Records
 ```bash
 # A record pointing to your Elastic IP
 aws route53 change-resource-record-sets --hosted-zone-id Z1234567890 --change-batch '{
@@ -293,9 +352,9 @@ aws route53 change-resource-record-sets --hosted-zone-id Z1234567890 --change-ba
 }'
 ```
 
-## Step 7: Monitoring and Logging
+## Step 8: Monitoring and Logging
 
-### 7.1 Install CloudWatch Agent
+### 8.1 Install CloudWatch Agent
 ```bash
 # Download and install CloudWatch agent for Ubuntu 24.04
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
@@ -308,7 +367,7 @@ sudo apt-get install -f
 # sudo snap install amazon-cloudwatch-agent
 ```
 
-### 7.2 Configure CloudWatch Agent
+### 8.2 Configure CloudWatch Agent
 ```bash
 sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'EOF'
 {
@@ -359,7 +418,7 @@ EOF
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
 ```
 
-### 7.3 Setup Log Rotation
+### 8.3 Setup Log Rotation
 ```bash
 sudo tee /etc/logrotate.d/travel-itinerary << 'EOF'
 /home/ubuntu/.pm2/logs/*.log {
@@ -376,14 +435,14 @@ sudo tee /etc/logrotate.d/travel-itinerary << 'EOF'
 EOF
 ```
 
-## Step 8: Backup and Security
+## Step 9: Backup and Security
 
-### 8.1 Create AMI Backup
+### 9.1 Create AMI Backup
 ```bash
 aws ec2 create-image --instance-id i-xxxxxxxxx --name "travel-itinerary-backup-$(date +%Y%m%d)" --description "Travel Itinerary Generator backup"
 ```
 
-### 8.2 Setup Automated Backups
+### 9.2 Setup Automated Backups
 ```bash
 # Create backup script
 sudo tee /home/ubuntu/backup.sh << 'EOF'
@@ -411,7 +470,7 @@ chmod +x /home/ubuntu/backup.sh
 echo "0 2 * * * /home/ubuntu/backup.sh" | crontab -
 ```
 
-### 8.3 Security Hardening
+### 9.3 Security Hardening
 ```bash
 # Update security group to restrict SSH access
 aws ec2 authorize-security-group-ingress --group-id sg-xxxxxxxxx --protocol tcp --port 22 --cidr your-ip/32
@@ -428,7 +487,7 @@ sudo ufw allow 443/tcp
 sudo ufw --force enable
 ```
 
-## Step 9: Deployment Script
+## Step 10: Deployment Script
 
 Create an automated deployment script:
 
@@ -464,9 +523,9 @@ echo "✅ Deployment completed successfully!"
 echo "🌐 Your app is live at: https://your-domain.com"
 ```
 
-## Step 10: Testing and Verification
+## Step 11: Testing and Verification
 
-### 10.1 Health Checks
+### 11.1 Health Checks
 ```bash
 # Test backend health
 curl https://your-domain.com/health
@@ -480,7 +539,7 @@ curl -X POST https://your-domain.com/api/verify-city \
 curl -I https://your-domain.com
 ```
 
-### 10.2 Performance Testing
+### 11.2 Performance Testing
 ```bash
 # Install Apache Bench
 sudo apt install -y apache2-utils

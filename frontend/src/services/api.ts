@@ -5,9 +5,31 @@ import {
   SpotGenerationResponse,
   SpotSelectionResponse,
   ItineraryGenerationResponse,
+  EnhancedItineraryResult,
   SpotDetailsResponse,
   GooglePlaceDetails,
+  ItineraryOptions,
 } from '../types';
+
+// Performance monitoring types
+interface PerformanceOverview {
+  cache: {
+    hitRate: number;
+    totalEntries: number;
+    memoryUsage: number;
+  };
+  optimization: {
+    totalOptimizations: number;
+    averageOptimizationTime: number;
+    successRate: number;
+  };
+  apiMetrics: {
+    totalRequests: number;
+    successfulRequests: number;
+    averageResponseTime: number;
+  };
+  recommendations: string[];
+}
 import { SessionCache } from '../utils/cache.js';
 import { PerformanceMonitor } from '../utils/performance.js';
 import { RequestDeduplicator, debounce } from '../utils/debounce.js';
@@ -204,6 +226,61 @@ export class ApiService {
         throw new Error(error.response.data.error.message);
       }
       throw new Error('Network error. Please check your connection and try again.');
+    }
+  }
+
+  /**
+   * Generate optimized itinerary with Google Maps integration
+   */
+  static async generateOptimizedItinerary(
+    sessionId: string,
+    options: ItineraryOptions = {}
+  ): Promise<EnhancedItineraryResult> {
+    // Import performance tracker dynamically to avoid circular dependencies
+    const { optimizationTracker } = await import('../utils/optimizationPerformance.js');
+    
+    // Estimate spots count for performance tracking (fallback to 5 if unknown)
+    const spotsCount = 5; // Default spots count for tracking
+    const travelMode = options.travelMode || 'transit';
+    
+    // Start performance tracking
+    const trackingId = optimizationTracker.startOptimization(spotsCount, travelMode);
+    
+    try {
+      console.log(`🗺️ Generating optimized itinerary for session: ${sessionId}`, options);
+      
+      const response: AxiosResponse<ApiResponse<EnhancedItineraryResult>> = await apiClient.post(
+        '/itinerary/optimize',
+        { 
+          sessionId,
+          travelMode: options.travelMode || 'transit',
+          startTime: options.startTime || '09:00',
+          visitDuration: options.visitDuration || 60,
+          includeBreaks: options.includeBreaks || false
+        }
+      );
+
+      if (!response.data.success || !response.data.data) {
+        const errorMessage = response.data.error?.message || 'Failed to generate optimized itinerary';
+        optimizationTracker.completeOptimization(trackingId, false, false, errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      // Check if result was cached (assuming false for now)
+      const wasCached = false;
+      optimizationTracker.completeOptimization(trackingId, true, wasCached);
+
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Optimized itinerary generation error:', error);
+      
+      const errorMessage = axios.isAxiosError(error) && error.response?.data?.error
+        ? error.response.data.error.message
+        : 'Network error. Please check your connection and try again.';
+      
+      optimizationTracker.completeOptimization(trackingId, false, false, errorMessage);
+      
+      throw new Error(errorMessage);
     }
   }
 
@@ -429,6 +506,132 @@ export class ApiService {
     );
 
     await Promise.allSettled(preloadPromises);
+  }
+
+  /**
+   * Fetch backend performance overview
+   */
+  static async getPerformanceOverview(): Promise<PerformanceOverview> {
+    try {
+      const response: AxiosResponse<ApiResponse<PerformanceOverview>> = await apiClient.get(
+        '/monitoring/performance/overview'
+      );
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error?.message || 'Failed to fetch performance overview');
+      }
+
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Performance overview error:', error);
+      
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error.message);
+      }
+      throw new Error('Failed to fetch performance metrics');
+    }
+  }
+
+  /**
+   * Fetch cache statistics from backend
+   */
+  static async getCacheStatistics(): Promise<any> {
+    try {
+      const response: AxiosResponse<ApiResponse<any>> = await apiClient.get(
+        '/monitoring/performance/cache'
+      );
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error?.message || 'Failed to fetch cache statistics');
+      }
+
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Cache statistics error:', error);
+      
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error.message);
+      }
+      throw new Error('Failed to fetch cache statistics');
+    }
+  }
+
+  /**
+   * Fetch optimization performance report from backend
+   */
+  static async getOptimizationReport(): Promise<any> {
+    try {
+      const response: AxiosResponse<ApiResponse<any>> = await apiClient.get(
+        '/monitoring/performance/optimization'
+      );
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error?.message || 'Failed to fetch optimization report');
+      }
+
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Optimization report error:', error);
+      
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error.message);
+      }
+      throw new Error('Failed to fetch optimization report');
+    }
+  }
+
+  /**
+   * Preload common locations into backend cache
+   */
+  static async preloadCommonLocations(locations: string[]): Promise<void> {
+    try {
+      const response: AxiosResponse<ApiResponse<any>> = await apiClient.post(
+        '/monitoring/performance/preload',
+        { locations }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Failed to preload locations');
+      }
+
+      console.log(`✅ Preloaded ${locations.length} locations into backend cache`);
+    } catch (error) {
+      console.error('❌ Preload locations error:', error);
+      
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error.message);
+      }
+      throw new Error('Failed to preload locations');
+    }
+  }
+
+  /**
+   * Clear backend performance data
+   */
+  static async clearBackendPerformanceData(options: {
+    cache?: boolean;
+    optimization?: boolean;
+    logs?: boolean;
+  } = {}): Promise<void> {
+    try {
+      const response: AxiosResponse<ApiResponse<any>> = await apiClient.post(
+        '/monitoring/performance/clear',
+        options
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.error?.message || 'Failed to clear performance data');
+      }
+
+      console.log('✅ Backend performance data cleared successfully');
+    } catch (error) {
+      console.error('❌ Clear performance data error:', error);
+      
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        throw new Error(error.response.data.error.message);
+      }
+      throw new Error('Failed to clear performance data');
+    }
   }
 }
 
