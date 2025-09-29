@@ -159,7 +159,6 @@ describe('ItineraryDisplay', () => {
     renderWithRouter(<ItineraryDisplay {...propsWithOptimizedItinerary} />);
 
     expect(screen.getByText('🗓️ Optimized Paris Adventure')).toBeInTheDocument();
-    expect(screen.getByText('✨ Optimized Route')).toBeInTheDocument();
     expect(screen.getByText('🎯 Route Optimization Summary')).toBeInTheDocument();
     expect(screen.getByText('Total Travel Time:')).toBeInTheDocument();
     expect(screen.getByText('45 minutes')).toBeInTheDocument();
@@ -273,6 +272,7 @@ describe('ItineraryDisplay', () => {
     const stateWithOptimizedItinerary = {
       ...mockState,
       optimizedItinerary,
+      city: 'Paris',
     };
 
     const propsWithOptimizedItinerary = {
@@ -289,13 +289,13 @@ describe('ItineraryDisplay', () => {
 
     renderWithRouter(<ItineraryDisplay {...propsWithOptimizedItinerary} />);
 
-    const navigationButtons = screen.getAllByText(/🧭 Navigate/);
-    const firstNavButton = navigationButtons[0];
-    
-    fireEvent.click(firstNavButton);
+    // Click on the first spot's navigation button
+    const mapIcons = screen.getAllByTitle(/Get directions to/);
+    const firstMapIcon = mapIcons[0];
+    fireEvent.click(firstMapIcon);
     
     expect(mockWindowOpen).toHaveBeenCalledWith(
-      'https://maps.google.com/directions?destination=Eiffel+Tower',
+      'https://www.google.com/maps/search/?api=1&query=Eiffel%20Tower+Paris',
       '_blank',
       'noopener,noreferrer'
     );
@@ -405,28 +405,14 @@ describe('ItineraryDisplay', () => {
     expect(mockPrint).toHaveBeenCalled();
   });
 
-  it('shows optimization badge only for optimized itineraries', () => {
-    // Test basic itinerary (no badge)
-    const stateWithBasicItinerary = {
-      ...mockState,
-      itinerary: basicItinerary,
-    };
-
-    const propsWithBasicItinerary = {
-      ...mockActions,
-      state: stateWithBasicItinerary,
-    };
-
-    const { rerender } = renderWithRouter(
-      <ItineraryDisplay {...propsWithBasicItinerary} />
-    );
-
-    expect(screen.queryByText('✨ Optimized Route')).not.toBeInTheDocument();
-
-    // Test optimized itinerary (with badge)
+  it('shows Google Maps navigation for all spots', () => {
     const stateWithOptimizedItinerary = {
       ...mockState,
       optimizedItinerary,
+      spots: [
+        { id: '1', name: 'Eiffel Tower', category: 'Landmark', location: 'Paris', description: 'Iconic iron tower', duration: '2 hours' },
+        { id: '2', name: 'Louvre Museum', category: 'Museum', location: 'Paris', description: 'World famous art museum', duration: '3 hours' }
+      ]
     };
 
     const propsWithOptimizedItinerary = {
@@ -434,11 +420,91 @@ describe('ItineraryDisplay', () => {
       state: stateWithOptimizedItinerary,
     };
 
-    rerender(
-      <ItineraryDisplay {...propsWithOptimizedItinerary} />
-    );
+    renderWithRouter(<ItineraryDisplay {...propsWithOptimizedItinerary} />);
 
-    expect(screen.getByText('✨ Optimized Route')).toBeInTheDocument();
+    // Should show Google Maps icon for each spot
+    const mapIcons = screen.getAllByTitle(/Get directions to/);
+    expect(mapIcons).toHaveLength(2); // One for each spot
+    
+    mapIcons.forEach(icon => {
+      expect(icon.textContent).toBe('🗺️');
+    });
+  });
+
+  it('displays original spot descriptions instead of enhanced notes', () => {
+    const stateWithOptimizedItinerary = {
+      ...mockState,
+      optimizedItinerary,
+      spots: [
+        { id: '1', name: 'Eiffel Tower', category: 'Landmark', location: 'Paris', description: 'Iconic iron tower built in 1889', duration: '2 hours' },
+        { id: '2', name: 'Louvre Museum', category: 'Museum', location: 'Paris', description: 'World famous art museum with the Mona Lisa', duration: '3 hours' }
+      ]
+    };
+
+    const propsWithOptimizedItinerary = {
+      ...mockActions,
+      state: stateWithOptimizedItinerary,
+    };
+
+    renderWithRouter(<ItineraryDisplay {...propsWithOptimizedItinerary} />);
+
+    // Should show original descriptions instead of enhanced notes
+    expect(screen.getByText('Iconic iron tower built in 1889')).toBeInTheDocument();
+    expect(screen.getByText('World famous art museum with the Mona Lisa')).toBeInTheDocument();
+    
+    // Should not show the enhanced notes
+    expect(screen.queryByText('Great views from the top')).not.toBeInTheDocument();
+    expect(screen.queryByText('Don\'t miss the Mona Lisa')).not.toBeInTheDocument();
+  });
+
+  it('handles multi-day itineraries when times go past 8pm', () => {
+    const lateItinerary: OptimizedItinerary = {
+      ...optimizedItinerary,
+      schedule: [
+        {
+          time: '18:00',
+          spot: 'Evening Spot',
+          duration: '2 hours',
+          arrivalTime: '18:00',
+          departureTime: '20:00',
+        },
+        {
+          time: '21:00',
+          spot: 'Late Night Spot',
+          duration: '2 hours',
+          arrivalTime: '21:00',
+          departureTime: '23:00',
+        },
+        {
+          time: '08:00',
+          spot: 'Early Morning Spot',
+          duration: '2 hours',
+          arrivalTime: '08:00',
+          departureTime: '10:00',
+        }
+      ]
+    };
+
+    const stateWithLateItinerary = {
+      ...mockState,
+      optimizedItinerary: lateItinerary,
+    };
+
+    const propsWithLateItinerary = {
+      ...mockActions,
+      state: stateWithLateItinerary,
+    };
+
+    renderWithRouter(<ItineraryDisplay {...propsWithLateItinerary} />);
+
+    // First spot should not have day label (before 8pm)
+    expect(screen.getByText(/📍 Arrive: 18:00/)).toBeInTheDocument();
+    
+    // Second spot should not have day label (same day, after 8pm)
+    expect(screen.getByText(/📍 Arrive: 21:00/)).toBeInTheDocument();
+    
+    // Third spot should have Day 2 label and start at 09:00 (adjusted from 08:00)
+    expect(screen.getByText(/Day 2 - 📍 Arrive: 09:00/)).toBeInTheDocument();
   });
 
   it('handles missing navigation URLs gracefully', () => {
@@ -533,7 +599,9 @@ describe('ItineraryDisplay', () => {
 
     // Re-render with same props
     rerender(
-      <ItineraryDisplay {...propsWithOptimizedItinerary} />
+      <BrowserRouter>
+        <ItineraryDisplay {...propsWithOptimizedItinerary} />
+      </BrowserRouter>
     );
 
     expect(screen.getByText('🗓️ Optimized Paris Adventure')).toBeInTheDocument();

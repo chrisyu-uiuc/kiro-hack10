@@ -51,29 +51,29 @@ export class EnhancedItineraryService {
 
     try {
       console.log(`🔄 Starting enhanced itinerary generation for ${selectedSpots.length} spots in ${city}`);
-      
+
       // Performance optimization: Handle large spot counts differently
       if (selectedSpots.length > 10) {
         console.log(`⚡ Large itinerary detected (${selectedSpots.length} spots), using optimized processing`);
         return await this.generateLargeItinerary(sessionId, selectedSpots, city, options);
       }
-      
+
       // Step 1: Get basic itinerary structure from Bedrock Agent (with timeout)
       console.log('📋 Step 1: Getting basic itinerary from Bedrock Agent...');
       const bedrockItinerary = await Promise.race([
         this.bedrockService.generateItinerary(selectedSpots, sessionId),
-        new Promise<never>((_, reject) => 
+        new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Bedrock Agent timeout')), 30000)
         )
       ]);
       console.log('✅ Step 1 completed: Bedrock Agent itinerary generated');
-      
+
       // Step 2: Optimize route using Google Maps (extract spot names)
       console.log('🗺️ Step 2: Optimizing route with Google Maps...');
       const spotNames = selectedSpots.map(spot => spot.name);
       const optimizedItinerary = await Promise.race([
         this.mapsService.createOptimizedItinerary(spotNames, city, travelMode, startTime),
-        new Promise<never>((_, reject) => 
+        new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Google Maps optimization timeout')), 45000)
         )
       ]);
@@ -100,7 +100,7 @@ export class EnhancedItineraryService {
 
     } catch (error) {
       console.error('❌ Enhanced itinerary generation failed:', error);
-      
+
       // Enhanced error logging for Google Maps API errors
       if (error instanceof GoogleMapsApiError) {
         console.error('Google Maps API Error Details:', {
@@ -110,7 +110,7 @@ export class EnhancedItineraryService {
           rateLimited: error.rateLimited,
           message: error.message
         });
-        
+
         // Log specific guidance for quota/rate limit issues
         if (error.quotaExceeded) {
           console.error('🚨 Google Maps API quota exceeded. Check billing account and usage limits.');
@@ -125,7 +125,7 @@ export class EnhancedItineraryService {
           stack: error instanceof Error ? error.stack : undefined
         });
       }
-      
+
       // Fallback to basic Bedrock Agent itinerary
       console.log('🔄 Falling back to basic itinerary generation');
       return await this.generateFallbackItinerary(selectedSpots, sessionId, city, travelMode);
@@ -143,9 +143,9 @@ export class EnhancedItineraryService {
     options: ItineraryOptions
   ): Promise<OptimizedItinerary> {
     const { travelMode = 'walking', startTime = '09:00', visitDuration = 60, includeBreaks = true } = options;
-    
+
     console.log(`🚀 Processing large itinerary with ${selectedSpots.length} spots`);
-    
+
     try {
       // Step 1: Get basic structure from Bedrock (with reduced timeout)
       console.log('📋 Getting basic structure from Bedrock Agent...');
@@ -153,7 +153,7 @@ export class EnhancedItineraryService {
       try {
         bedrockItinerary = await Promise.race([
           this.bedrockService.generateItinerary(selectedSpots.slice(0, 8), sessionId), // Limit to first 8 spots
-          new Promise<never>((_, reject) => 
+          new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('Bedrock timeout')), 20000)
           )
         ]);
@@ -161,7 +161,7 @@ export class EnhancedItineraryService {
         console.log('⚠️ Bedrock Agent timeout, proceeding with Google Maps only');
         bedrockItinerary = null;
       }
-      
+
       // Step 2: Use fast Google Maps optimization
       console.log('🗺️ Using fast route optimization for large spot count...');
       const spotNames = selectedSpots.map(spot => spot.name);
@@ -171,7 +171,7 @@ export class EnhancedItineraryService {
         travelMode,
         startTime
       );
-      
+
       // Step 3: Enhanced schedule with chunked processing
       console.log('🔧 Creating enhanced schedule with chunked processing...');
       const enhancedSchedule = await this.createLargeSchedule(
@@ -181,7 +181,7 @@ export class EnhancedItineraryService {
         includeBreaks,
         visitDuration
       );
-      
+
       const finalItinerary = {
         ...optimizedItinerary,
         schedule: enhancedSchedule,
@@ -190,10 +190,10 @@ export class EnhancedItineraryService {
 
       console.log('🎉 Large itinerary generation completed successfully');
       return finalItinerary;
-      
+
     } catch (error) {
       console.error('❌ Large itinerary generation failed:', error);
-      
+
       // Fallback to simple sequential itinerary
       console.log('🔄 Using fallback sequential itinerary');
       return await this.generateSequentialFallback(selectedSpots, city, travelMode, startTime, visitDuration);
@@ -210,37 +210,16 @@ export class EnhancedItineraryService {
     includeBreaks: boolean,
     visitDuration: number
   ): Promise<ScheduleItem[]> {
-    const schedule = [...optimizedItinerary.schedule];
-    
-    // Apply custom visit duration
-    for (const item of schedule) {
-      if (item.spot && !item.spot.includes('Lunch') && !item.spot.includes('Break')) {
-        item.duration = `${visitDuration} mins`;
-        
-        // Update timing if we have arrival/departure times
-        if (item.arrivalTime && item.departureTime) {
-          const arrivalMinutes = this.parseTime(item.arrivalTime);
-          const newDepartureMinutes = arrivalMinutes + visitDuration;
-          item.departureTime = this.formatTime(newDepartureMinutes);
-        }
-      }
-    }
-    
-    // Add lunch break for large itineraries (around midday)
+    console.log('📋 Creating large schedule with proper timing...');
+
+    // First, recalculate timing with the new visit duration
+    const schedule = this.recalculateScheduleTiming(optimizedItinerary.schedule, visitDuration);
+
+    // Add smart meal breaks for large itineraries
     if (includeBreaks && selectedSpots.length > 6) {
-      const midPoint = Math.floor(schedule.length / 2);
-      const lunchBreak: ScheduleItem = {
-        time: '12:00',
-        spot: '🍽️ Lunch Break',
-        duration: '60 mins',
-        arrivalTime: '12:00',
-        departureTime: '13:00',
-        notes: 'Recommended lunch break - find a nearby restaurant'
-      };
-      
-      schedule.splice(midPoint, 0, lunchBreak);
+      this.addSmartMealBreaks(schedule);
     }
-    
+
     return schedule;
   }
 
@@ -255,15 +234,15 @@ export class EnhancedItineraryService {
     visitDuration: number
   ): Promise<OptimizedItinerary> {
     console.log('🔄 Creating sequential fallback itinerary');
-    
+
     const schedule: ScheduleItem[] = [];
     let currentTime = this.parseTime(startTime);
-    
+
     for (let i = 0; i < selectedSpots.length; i++) {
       const spot = selectedSpots[i];
       const arrivalTime = this.formatTime(currentTime);
       const departureTime = this.formatTime(currentTime + visitDuration);
-      
+
       schedule.push({
         time: arrivalTime,
         spot: spot.name,
@@ -274,12 +253,12 @@ export class EnhancedItineraryService {
         travelTime: i < selectedSpots.length - 1 ? '15m' : undefined,
         notes: spot.description || `Visit ${spot.name}`
       });
-      
+
       currentTime += visitDuration + 15; // 15 min travel time estimate
     }
-    
+
     const totalDuration = Math.ceil((currentTime - this.parseTime(startTime)) / 60);
-    
+
     return {
       title: `${city} Sequential Itinerary - ${selectedSpots.length} stops`,
       totalDuration: this.formatDuration(totalDuration),
@@ -305,58 +284,42 @@ export class EnhancedItineraryService {
   ): Promise<ScheduleItem[]> {
     try {
       console.log('🔧 Enhancing schedule with Bedrock Agent insights...');
-      
+
       // Validate inputs
       if (!optimizedItinerary || !optimizedItinerary.schedule) {
         throw new Error('Invalid optimized itinerary provided');
       }
-      
+
       if (!bedrockItinerary || !bedrockItinerary.schedule) {
         console.warn('⚠️ No Bedrock itinerary provided, using Google Maps schedule only');
-        return optimizedItinerary.schedule;
+        return this.recalculateScheduleTiming(optimizedItinerary.schedule, visitDuration);
       }
 
       const enhancedSchedule = [...optimizedItinerary.schedule];
 
-      // Apply custom visit duration to each spot
-      for (let i = 0; i < enhancedSchedule.length; i++) {
-        const item = enhancedSchedule[i];
-        if (item && !item.spot.includes('Break')) {
-          item.duration = `${visitDuration} mins`;
-          if (item.arrivalTime) {
-            item.departureTime = this.calculateDepartureTime(item.arrivalTime, item.duration);
-          }
-        }
-      }
-
-      // Add meal breaks if requested
-      if (includeBreaks) {
-        this.addMealBreaks(enhancedSchedule);
-      }
-
-      // Enhance with Bedrock Agent notes and recommendations
+      // First, enhance with Bedrock Agent notes and recommendations
       for (let i = 0; i < enhancedSchedule.length; i++) {
         const scheduleItem = enhancedSchedule[i];
-        
+
         // Skip meal breaks and invalid items
         if (!scheduleItem || scheduleItem.spot.includes('Break')) {
           continue;
         }
-        
+
         try {
           // Find corresponding Bedrock recommendation
-          const bedrockItem = bedrockItinerary.schedule.find(item => 
+          const bedrockItem = bedrockItinerary.schedule.find(item =>
             item && item.spot && scheduleItem.spot &&
             (item.spot.toLowerCase().includes(scheduleItem.spot.toLowerCase()) ||
-             scheduleItem.spot.toLowerCase().includes(item.spot.toLowerCase()))
+              scheduleItem.spot.toLowerCase().includes(item.spot.toLowerCase()))
           );
 
           if (bedrockItem && bedrockItem.notes) {
             // Combine Google Maps navigation with Bedrock insights
             const existingNotes = scheduleItem.notes || '';
             const bedrockNotes = bedrockItem.notes;
-            
-            scheduleItem.notes = existingNotes 
+
+            scheduleItem.notes = existingNotes
               ? `${existingNotes} | 💡 ${bedrockNotes}`
               : `💡 ${bedrockNotes}`;
           }
@@ -366,9 +329,17 @@ export class EnhancedItineraryService {
         }
       }
 
+      // Then recalculate all timing to ensure consistency
+      const finalSchedule = this.recalculateScheduleTiming(enhancedSchedule, visitDuration);
+
+      // Add meal breaks if requested (after timing is fixed)
+      if (includeBreaks) {
+        this.addSmartMealBreaks(finalSchedule);
+      }
+
       console.log('✅ Schedule enhancement completed');
-      return enhancedSchedule;
-      
+      return finalSchedule;
+
     } catch (error) {
       console.error('❌ Error enhancing schedule with insights:', error);
       // Return the original schedule if enhancement fails
@@ -377,18 +348,185 @@ export class EnhancedItineraryService {
   }
 
   /**
-   * Add meal breaks to the schedule
+   * Recalculate schedule timing to ensure sequential consistency with multi-day support
    */
-  private addMealBreaks(schedule: ScheduleItem[]): void {
-    const lunchTime = 12 * 60; // 12:00 PM in minutes
-    const dinnerTime = 18 * 60; // 6:00 PM in minutes
+  private recalculateScheduleTiming(schedule: ScheduleItem[], visitDuration: number): ScheduleItem[] {
+    console.log('🕐 Recalculating schedule timing for multi-day consistency...');
 
-    // Work backwards to avoid index shifting issues
-    for (let i = schedule.length - 1; i >= 0; i--) {
-      const currentTime = this.parseTime(schedule[i].arrivalTime);
-      
-      // Add dinner break (check this first since we're going backwards)
-      if (currentTime >= dinnerTime && !this.hasRecentMealBreak(schedule, i, 'dinner')) {
+    if (!schedule || schedule.length === 0) {
+      return schedule;
+    }
+
+    const recalculatedSchedule = [...schedule];
+
+    // Daily schedule constraints
+    const dailyStartTime = 9 * 60; // 9:00 AM in minutes
+    const dailyEndTime = 20 * 60; // 8:00 PM in minutes
+
+    let currentTime = dailyStartTime; // Start at 9:00 AM
+    let currentDay = 1;
+    let isFirstItemOfDay = true;
+
+    for (let i = 0; i < recalculatedSchedule.length; i++) {
+      const item = recalculatedSchedule[i];
+
+      if (!item) continue;
+
+      // Remove any existing day labels to avoid duplicates
+      item.spot = item.spot.replace(/^\*\*Day \d+\*\* - /, '');
+
+      // Calculate visit duration (use custom duration or default)
+      let itemDuration = visitDuration;
+      if (item.spot.includes('Break')) {
+        // Meal breaks have their own duration
+        itemDuration = item.spot.includes('Lunch') ? 60 : 90;
+      }
+
+      // Calculate when this activity would end
+      const activityEndTime = currentTime + itemDuration;
+
+      // Check if this activity would make us go past 8 PM (departure time > 8 PM)
+      if (activityEndTime > dailyEndTime && !isFirstItemOfDay) {
+        // Move to next day
+        currentDay++;
+        currentTime = dailyStartTime; // Reset to 9:00 AM next day
+        isFirstItemOfDay = true;
+        console.log(`📅 Moving to Day ${currentDay} at 09:00 due to time constraint`);
+      }
+
+      // Set arrival time
+      item.arrivalTime = this.formatTime(currentTime);
+      item.time = item.arrivalTime; // Keep time field in sync
+
+      // Update duration and departure time
+      item.duration = `${itemDuration} mins`;
+      item.departureTime = this.formatTime(currentTime + itemDuration);
+
+      // Add day label to spot name for first item of each day
+      if (isFirstItemOfDay) {
+        item.spot = `**Day ${currentDay}** - ${item.spot}`;
+        isFirstItemOfDay = false;
+      }
+
+      // Calculate next arrival time (departure + travel time)
+      currentTime += itemDuration;
+
+      // Add travel time to next location if available
+      if (i < recalculatedSchedule.length - 1 && item.travelTime) {
+        const travelMinutes = this.parseTravelTime(item.travelTime);
+        currentTime += travelMinutes;
+      }
+
+      console.log(`📍 Day ${currentDay} - ${item.spot.replace(/^\*\*Day \d+\*\* - /, '')}: ${item.arrivalTime} - ${item.departureTime} (${item.duration})`);
+    }
+
+    console.log(`✅ Schedule timing recalculated successfully across ${currentDay} day(s)`);
+    return recalculatedSchedule;
+  }
+
+
+
+  /**
+   * Parse travel time string to minutes
+   */
+  private parseTravelTime(travelTimeStr: string): number {
+    // Handle formats like "15m", "15 mins", "1h 30m", etc.
+    const hourMatch = travelTimeStr.match(/(\d+)h/);
+    const minuteMatch = travelTimeStr.match(/(\d+)m/);
+
+    let totalMinutes = 0;
+    if (hourMatch) {
+      totalMinutes += parseInt(hourMatch[1]) * 60;
+    }
+    if (minuteMatch) {
+      totalMinutes += parseInt(minuteMatch[1]);
+    }
+
+    // If no match found, assume it's just minutes
+    if (totalMinutes === 0) {
+      const numberMatch = travelTimeStr.match(/(\d+)/);
+      if (numberMatch) {
+        totalMinutes = parseInt(numberMatch[1]);
+      }
+    }
+
+    return totalMinutes || 15; // Default to 15 minutes if parsing fails
+  }
+
+  /**
+   * Add smart meal breaks based on actual schedule timing and daily boundaries
+   */
+  private addSmartMealBreaks(schedule: ScheduleItem[]): void {
+    console.log('🍽️ Adding smart meal breaks based on daily schedule timing...');
+
+    if (!schedule || schedule.length === 0) {
+      return;
+    }
+
+    const lunchTimeTarget = 12 * 60; // 12:00 PM in minutes
+    const dinnerTimeTarget = 18 * 60; // 6:00 PM in minutes
+
+    // Group schedule by days
+    const dayGroups: { [day: number]: { items: ScheduleItem[], startIndex: number } } = {};
+    let currentDay = 1;
+
+    for (let i = 0; i < schedule.length; i++) {
+      const item = schedule[i];
+      if (!item) continue;
+
+      // Detect day changes
+      if (item.spot.includes('**Day ')) {
+        const dayMatch = item.spot.match(/\*\*Day (\d+)\*\*/);
+        if (dayMatch) {
+          currentDay = parseInt(dayMatch[1]);
+        }
+      }
+
+      if (!dayGroups[currentDay]) {
+        dayGroups[currentDay] = { items: [], startIndex: i };
+      }
+      dayGroups[currentDay].items.push(item);
+    }
+
+    // Add meal breaks for each day
+    let totalInserted = 0;
+
+    Object.keys(dayGroups).forEach(dayKey => {
+      const day = parseInt(dayKey);
+      const dayGroup = dayGroups[day];
+      const dayItems = dayGroup.items;
+
+      console.log(`🍽️ Processing meal breaks for Day ${day} (${dayItems.length} items)`);
+
+      // Find lunch opportunity for this day
+      let lunchInsertIndex = -1;
+      let dinnerInsertIndex = -1;
+
+      for (let i = 0; i < dayItems.length; i++) {
+        const item = dayItems[i];
+        if (!item || item.spot.includes('Break')) continue;
+
+        const arrivalTime = this.parseTime(item.arrivalTime);
+
+        // Check for lunch break opportunity (around 12:00 PM)
+        if (lunchInsertIndex === -1 &&
+          arrivalTime >= lunchTimeTarget - 60 && // After 11 AM
+          arrivalTime <= lunchTimeTarget + 120 && // Before 2 PM
+          !this.hasRecentMealBreak(dayItems, i, 'lunch')) {
+          lunchInsertIndex = dayGroup.startIndex + i + 1 + totalInserted;
+        }
+
+        // Check for dinner break opportunity (around 6:00 PM)
+        if (dinnerInsertIndex === -1 &&
+          arrivalTime >= dinnerTimeTarget - 90 && // After 4:30 PM
+          arrivalTime <= dinnerTimeTarget + 60 && // Before 7 PM
+          !this.hasRecentMealBreak(dayItems, i, 'dinner')) {
+          dinnerInsertIndex = dayGroup.startIndex + i + 1 + totalInserted;
+        }
+      }
+
+      // Insert dinner break first (to avoid index shifting)
+      if (dinnerInsertIndex > 0 && dinnerInsertIndex <= schedule.length) {
         const dinnerBreak: ScheduleItem = {
           time: '18:00',
           spot: '🍽️ Dinner Break',
@@ -397,11 +535,19 @@ export class EnhancedItineraryService {
           departureTime: '19:30',
           notes: 'Recommended dinner break - explore local cuisine'
         };
-        schedule.splice(i + 1, 0, dinnerBreak);
+
+        schedule.splice(dinnerInsertIndex, 0, dinnerBreak);
+        console.log(`🍽️ Added dinner break for Day ${day} at ${dinnerBreak.arrivalTime}`);
+        totalInserted++;
+
+        // Adjust lunch index if needed
+        if (lunchInsertIndex >= dinnerInsertIndex) {
+          lunchInsertIndex++;
+        }
       }
-      
-      // Add lunch break
-      if (currentTime >= lunchTime && currentTime < dinnerTime && !this.hasRecentMealBreak(schedule, i, 'lunch')) {
+
+      // Insert lunch break
+      if (lunchInsertIndex > 0 && lunchInsertIndex <= schedule.length) {
         const lunchBreak: ScheduleItem = {
           time: '12:00',
           spot: '🍽️ Lunch Break',
@@ -410,9 +556,14 @@ export class EnhancedItineraryService {
           departureTime: '13:00',
           notes: 'Recommended lunch break - find a nearby restaurant'
         };
-        schedule.splice(i + 1, 0, lunchBreak);
+
+        schedule.splice(lunchInsertIndex, 0, lunchBreak);
+        console.log(`🍽️ Added lunch break for Day ${day} at ${lunchBreak.arrivalTime}`);
+        totalInserted++;
       }
-    }
+    });
+
+    console.log(`🍽️ Added ${totalInserted} meal breaks across ${Object.keys(dayGroups).length} day(s)`);
   }
 
   /**
@@ -420,14 +571,14 @@ export class EnhancedItineraryService {
    */
   private hasRecentMealBreak(schedule: ScheduleItem[], currentIndex: number, mealType: 'lunch' | 'dinner'): boolean {
     const mealKeyword = mealType === 'lunch' ? 'Lunch' : 'Dinner';
-    
+
     // Check previous and next few items
     for (let i = Math.max(0, currentIndex - 2); i <= Math.min(schedule.length - 1, currentIndex + 2); i++) {
       if (schedule[i] && schedule[i].spot.includes(mealKeyword)) {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -438,7 +589,7 @@ export class EnhancedItineraryService {
     const arrivalMinutes = this.parseTime(arrivalTime);
     const durationMinutes = this.parseDuration(duration);
     const departureMinutes = arrivalMinutes + durationMinutes;
-    
+
     return this.formatTime(departureMinutes);
   }
 
@@ -478,19 +629,19 @@ export class EnhancedItineraryService {
   ): Promise<OptimizedItinerary> {
     try {
       console.log('🔄 Attempting fallback with Bedrock Agent only...');
-      
+
       // Ensure we have valid parameters for Bedrock Agent
       if (!selectedSpots || selectedSpots.length === 0) {
         throw new Error('No spots provided for fallback itinerary');
       }
-      
+
       if (!sessionId || typeof sessionId !== 'string') {
         throw new Error('Invalid session ID for fallback itinerary');
       }
 
       const fallbackItinerary = await this.bedrockService.generateItinerary(selectedSpots, sessionId);
       console.log('✅ Fallback: Bedrock Agent itinerary generated successfully');
-      
+
       const result = {
         title: `${city} Itinerary - ${this.getTransportationText(travelMode)} (Basic)`,
         totalDuration: fallbackItinerary.totalDuration,
@@ -514,7 +665,7 @@ export class EnhancedItineraryService {
 
       console.log('✅ Fallback itinerary created successfully');
       return result;
-      
+
     } catch (fallbackError) {
       console.error('❌ Fallback itinerary generation also failed:', fallbackError);
       console.error('Fallback error details:', {
@@ -522,7 +673,7 @@ export class EnhancedItineraryService {
         message: fallbackError instanceof Error ? fallbackError.message : 'Unknown error',
         stack: fallbackError instanceof Error ? fallbackError.stack : undefined
       });
-      
+
       // Last resort: create a basic schedule
       console.log('🔄 Using last resort: creating basic itinerary...');
       return this.createBasicItinerary(selectedSpots, city, travelMode);
@@ -585,16 +736,16 @@ export class EnhancedItineraryService {
   ): Promise<EnhancedItineraryResult> {
     try {
       console.log(`🚀 Starting enhanced itinerary generation for session: ${sessionId}`);
-      
+
       // Validate inputs before proceeding
       if (!sessionId || typeof sessionId !== 'string') {
         throw new Error('Invalid session ID provided');
       }
-      
+
       if (!selectedSpots || !Array.isArray(selectedSpots) || selectedSpots.length === 0) {
         throw new Error('No valid spots provided for itinerary generation');
       }
-      
+
       if (!city || typeof city !== 'string') {
         throw new Error('Invalid city provided');
       }
@@ -607,7 +758,7 @@ export class EnhancedItineraryService {
       }
 
       const itinerary = await this.generateOptimizedItinerary(sessionId, selectedSpots, city, options);
-      
+
       const result = {
         success: true,
         itinerary,
@@ -616,12 +767,12 @@ export class EnhancedItineraryService {
 
       console.log(`✅ Enhanced itinerary generation completed successfully. Fallback used: ${result.fallbackUsed}`);
       return result;
-      
+
     } catch (error) {
       console.error('❌ Enhanced itinerary generation completely failed:', error);
-      
+
       let errorMessage = 'Unknown error occurred during itinerary generation';
-      
+
       // Enhanced error handling for Google Maps API errors
       if (error instanceof GoogleMapsApiError) {
         console.error('Google Maps API Error Details:', {
@@ -631,9 +782,9 @@ export class EnhancedItineraryService {
           rateLimited: error.rateLimited,
           message: error.message
         });
-        
+
         errorMessage = error.message;
-        
+
         // Provide user-friendly error messages
         if (error.quotaExceeded) {
           errorMessage = 'Google Maps service is temporarily unavailable due to quota limits. Please try again later.';
@@ -649,12 +800,12 @@ export class EnhancedItineraryService {
           spotsCount: selectedSpots?.length || 0,
           city
         });
-        
+
         if (error instanceof Error) {
           errorMessage = error.message;
         }
       }
-      
+
       return {
         success: false,
         error: errorMessage,

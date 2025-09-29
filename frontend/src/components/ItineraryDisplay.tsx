@@ -77,16 +77,11 @@ function ItineraryDisplay({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const formatTravelTime = (travelTime?: string) => {
-    if (!travelTime) return null;
-    return `🚶 ${travelTime}`;
-  };
-
   const getTravelModeIcon = (mode?: string) => {
     switch (mode?.toLowerCase()) {
       case 'walking': return '🚶';
       case 'driving': return '🚗';
-      case 'transit': return '🚌';
+      case 'transit': return '🚶'; // Changed from 🚌 to 🚶
       default: return '🚶';
     }
   };
@@ -95,54 +90,102 @@ function ItineraryDisplay({
     return itinerary && 'route' in itinerary && 'totalTravelTime' in itinerary;
   };
 
-  const renderScheduleItem = (item: ScheduleItem, index: number, isOptimized: boolean) => {
+  const getOriginalSpotDescription = (spotName: string): string | null => {
+    const originalSpot = state.spots.find(spot => 
+      spot.name.toLowerCase() === spotName.toLowerCase() ||
+      spotName.toLowerCase().includes(spot.name.toLowerCase()) ||
+      spot.name.toLowerCase().includes(spotName.toLowerCase())
+    );
+    return originalSpot?.description || null;
+  };
+
+  const formatTimeWithDay = (time: string, index: number, schedule: ScheduleItem[]): { time: string; day: number } => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const timeInMinutes = hours * 60 + minutes;
+    
+    // Check if this is the start of a new day by looking at previous items
+    let currentDay = 0;
+    let foundNewDayTrigger = false;
+    
+    // Look at previous items to determine if we've crossed into a new day
+    for (let i = 0; i < index; i++) {
+      const prevItem = schedule[i];
+      const prevTime = prevItem.arrivalTime || prevItem.time;
+      const [prevHours] = prevTime.split(':').map(Number);
+      const prevTimeInMinutes = prevHours * 60 + parseInt(prevTime.split(':')[1]);
+      
+      // If previous time was past 8pm (20:00), the next item starts a new day
+      if (prevTimeInMinutes >= 20 * 60) {
+        foundNewDayTrigger = true;
+      }
+    }
+    
+    // If we found a trigger for a new day, increment the day counter
+    if (foundNewDayTrigger) {
+      currentDay = 1;
+    }
+    
+    // If we're in a new day (day > 0), ensure the time starts at 09:00 or later
+    if (currentDay > 0 && timeInMinutes < 9 * 60) {
+      return { time: '09:00', day: currentDay };
+    }
+    
+    return { time, day: currentDay };
+  };
+
+  const getDayLabel = (day: number): string => {
+    if (day === 0) return '';
+    if (day === 1) return 'Day 2 - ';
+    return `Day ${day + 1} - `;
+  };
+
+  const renderScheduleItem = (item: ScheduleItem, index: number, isOptimized: boolean, schedule: ScheduleItem[]) => {
+    const originalDescription = getOriginalSpotDescription(item.spot);
+    
+    // Determine day based on arrival time
+    const timeInfo = isOptimized && item.arrivalTime 
+      ? formatTimeWithDay(item.arrivalTime, index, schedule)
+      : formatTimeWithDay(item.time, index, schedule);
+    
     return (
       <div key={index} className="schedule-item">
         <div className="schedule-header">
           <div className="schedule-time">
             {isOptimized && item.arrivalTime ? (
               <div className="enhanced-time">
-                <div className="arrival-time">📍 Arrive: {item.arrivalTime}</div>
+                <div className="arrival-time">
+                  {getDayLabel(timeInfo.day)}📍 Arrive: {timeInfo.time}
+                </div>
                 {item.departureTime && (
                   <div className="departure-time">🚀 Depart: {item.departureTime}</div>
                 )}
               </div>
             ) : (
-              item.time
+              <span>{getDayLabel(timeInfo.day)}{timeInfo.time}</span>
             )}
           </div>
           <div className="schedule-duration">⏱️ {item.duration}</div>
         </div>
 
-        <div className="schedule-spot">{item.spot}</div>
-
-        <div className="schedule-details">
-          {item.transportation && (
-            <span className="transportation">
-              {getTravelModeIcon(item.transportation)} {item.transportation}
-            </span>
-          )}
-          {isOptimized && item.travelTime && (
-            <span className="travel-time">
-              {formatTravelTime(item.travelTime)}
-            </span>
-          )}
+        <div className="schedule-spot-header">
+          <div className="schedule-spot">{item.spot}</div>
+          <button
+            type="button"
+            className="btn-spot-navigate"
+            onClick={() => {
+              const spotName = encodeURIComponent(item.spot);
+              const cityName = encodeURIComponent(state.city);
+              const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${spotName}+${cityName}`;
+              handleNavigate(mapsUrl);
+            }}
+            title={`Get directions to ${item.spot}`}
+          >
+            🗺️
+          </button>
         </div>
 
-        {item.notes && (
-          <div className="schedule-notes">💡 {item.notes}</div>
-        )}
-
-        {isOptimized && item.navigationUrl && (
-          <div className="navigation-section">
-            <button
-              type="button"
-              className="btn-navigation"
-              onClick={() => handleNavigate(item.navigationUrl!)}
-            >
-              🧭 Navigate to {item.spot}
-            </button>
-          </div>
+        {originalDescription && (
+          <div className="schedule-description">{originalDescription}</div>
         )}
       </div>
     );
@@ -271,18 +314,15 @@ function ItineraryDisplay({
       <h2>🗓️ {currentItinerary!.title}</h2>
       <p>
         Your personalized itinerary for {state.city} • Total Duration: {currentItinerary!.totalDuration}
-        {isOptimized && (
-          <span className="optimization-badge">✨ Optimized Route</span>
-        )}
       </p>
-
-      {isOptimized && renderOptimizationSummary(currentItinerary as OptimizedItinerary)}
 
       <div className="itinerary-schedule">
         {currentItinerary!.schedule.map((item, index) =>
-          renderScheduleItem(item, index, isOptimized)
+          renderScheduleItem(item, index, isOptimized, currentItinerary!.schedule)
         )}
       </div>
+
+      {isOptimized && renderOptimizationSummary(currentItinerary as OptimizedItinerary)}
 
       <div className="navigation-buttons">
         <button
