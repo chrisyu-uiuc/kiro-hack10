@@ -1,7 +1,7 @@
 // Test driving routes as fallback for Osaka
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
-const API_KEY = "AIzaSyAYdP_ulJiLFRzszz2sIf7aymq1bdYPp3w";
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
 
 async function testRoute(origin, destination, mode) {
     console.log(`\n${mode === 'DRIVE' ? '🚗' : '🚶'} Testing ${mode}: ${origin} → ${destination}`);

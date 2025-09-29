@@ -1,7 +1,7 @@
 // Verify specific NYC route segments
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
-const API_KEY = "AIzaSyAYdP_ulJiLFRzszz2sIf7aymq1bdYPp3w";
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
 
 async function verifyRoute(origin, destination, expectedTime) {
     console.log(`\n🚇 Verifying: ${origin} → ${destination}`);

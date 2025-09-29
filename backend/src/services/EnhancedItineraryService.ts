@@ -314,14 +314,22 @@ export class EnhancedItineraryService {
               scheduleItem.spot.toLowerCase().includes(item.spot.toLowerCase()))
           );
 
-          if (bedrockItem && bedrockItem.notes) {
+          if (bedrockItem) {
+            // Preserve Bedrock Agent's duration if it's more specific
+            if (bedrockItem.duration && bedrockItem.duration !== '1 hour') {
+              scheduleItem.duration = bedrockItem.duration;
+              console.log(`🕐 Using Bedrock duration for ${scheduleItem.spot}: ${bedrockItem.duration}`);
+            }
+            
             // Combine Google Maps navigation with Bedrock insights
-            const existingNotes = scheduleItem.notes || '';
-            const bedrockNotes = bedrockItem.notes;
+            if (bedrockItem.notes) {
+              const existingNotes = scheduleItem.notes || '';
+              const bedrockNotes = bedrockItem.notes;
 
-            scheduleItem.notes = existingNotes
-              ? `${existingNotes} | 💡 ${bedrockNotes}`
-              : `💡 ${bedrockNotes}`;
+              scheduleItem.notes = existingNotes
+                ? `${existingNotes} | 💡 ${bedrockNotes}`
+                : `💡 ${bedrockNotes}`;
+            }
           }
         } catch (itemError) {
           console.warn(`⚠️ Error enhancing schedule item ${i}:`, itemError);
@@ -375,10 +383,16 @@ export class EnhancedItineraryService {
       // Remove any existing day labels to avoid duplicates
       item.spot = item.spot.replace(/^\*\*Day \d+\*\* - /, '');
 
-      // Calculate visit duration (use custom duration or default)
-      let itemDuration = visitDuration;
+      // Calculate visit duration (preserve existing duration or use default)
+      let itemDuration = visitDuration; // Default fallback
+      
+      // First, try to use existing duration from the item
+      if (item.duration) {
+        itemDuration = this.parseDuration(item.duration);
+      }
+      
+      // Override for meal breaks
       if (item.spot.includes('Break')) {
-        // Meal breaks have their own duration
         itemDuration = item.spot.includes('Lunch') ? 60 : 90;
       }
 
@@ -602,11 +616,44 @@ export class EnhancedItineraryService {
   }
 
   /**
-   * Parse duration string to minutes
+   * Parse duration string to minutes (handles various formats)
    */
   private parseDuration(durationStr: string): number {
-    const match = durationStr.match(/(\d+)/);
-    return match ? parseInt(match[1]) : 60;
+    if (!durationStr) return 60;
+    
+    const str = durationStr.toLowerCase();
+    
+    // Handle formats like "2-3 hours", "1-2 hours"
+    if (str.includes('-')) {
+      const rangeMatch = str.match(/(\d+)-(\d+)\s*hours?/);
+      if (rangeMatch) {
+        const min = parseInt(rangeMatch[1]);
+        const max = parseInt(rangeMatch[2]);
+        return Math.round((min + max) / 2) * 60; // Average of range in minutes
+      }
+    }
+    
+    // Handle formats like "2.5 hours", "1.5 hours"
+    const decimalHourMatch = str.match(/(\d+\.?\d*)\s*hours?/);
+    if (decimalHourMatch) {
+      return Math.round(parseFloat(decimalHourMatch[1]) * 60);
+    }
+    
+    // Handle formats like "90 mins", "45 minutes"
+    const minuteMatch = str.match(/(\d+)\s*(?:mins?|minutes?)/);
+    if (minuteMatch) {
+      return parseInt(minuteMatch[1]);
+    }
+    
+    // Handle simple hour format like "2 hour", "1 hour"
+    const hourMatch = str.match(/(\d+)\s*hours?/);
+    if (hourMatch) {
+      return parseInt(hourMatch[1]) * 60;
+    }
+    
+    // Fallback: extract any number and assume it's minutes
+    const numberMatch = str.match(/(\d+)/);
+    return numberMatch ? parseInt(numberMatch[1]) : 60;
   }
 
   /**

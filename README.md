@@ -1,19 +1,37 @@
-# Travel Itinerary Generator
+# Your AI Trip Planner
 
 A production-ready web application that creates personalized travel itineraries using AWS Bedrock Agent and Google Places API. The application follows a three-step user flow: city input, spot selection with detailed information popups, and comprehensive itinerary generation.
 
 ## ✨ Features
 
-- **AI-Powered Recommendations**: AWS Bedrock Agent integration for intelligent travel suggestions
-- **Detailed Spot Information**: Google Places API integration with photos, reviews, ratings, and practical information
+### 🤖 AI-Powered Travel Planning
+- **AWS Bedrock Agent Integration**: Nova Pro 1.0 model for intelligent travel suggestions
+- **Smart Duration Recommendations**: AI determines optimal visit times (museums: 2-3 hours, parks: 1-2 hours, viewpoints: 45 minutes)
+- **Personalized Itineraries**: Context-aware recommendations based on travel preferences
+
+### 🗺️ Advanced Route Optimization
+- **Google Maps Integration**: Real-time route optimization with multiple travel modes (walking, driving, transit)
+- **Multi-Day Scheduling**: Automatic day splitting with 9am-8pm daily limits and proper day transitions
+- **Smart Timing**: Sequential scheduling with travel time calculations and no overlapping activities
+- **Meal Break Integration**: Intelligent lunch and dinner break placement
+
+### 📍 Comprehensive Spot Information
+- **Google Places API Integration**: Photos, reviews, ratings, and practical information
 - **Interactive Photo Galleries**: Optimized image loading with lazy loading and caching
-- **Comprehensive Reviews**: Real user reviews and ratings from Google Places
+- **Real User Reviews**: Comprehensive reviews and ratings from Google Places
+- **Detailed Information Popups**: Rich spot details with error boundaries
+
+### 🎯 User Experience
 - **Multi-Step Flow**: Intuitive 3-step process from city selection to complete itinerary
 - **Session Management**: Maintains state across the user journey with performance caching
 - **Mobile-Optimized**: Touch-friendly interface with swipe gestures and responsive design
 - **Advanced Error Handling**: Comprehensive error boundaries with retry mechanisms and fallback content
+
+### ⚡ Performance & Production Ready
 - **Performance Optimized**: Image optimization, request deduplication, and session caching
-- **Production Ready**: 100+ comprehensive tests, security measures, and performance monitoring
+- **100+ Comprehensive Tests**: Full test coverage with unit, integration, and error handling tests
+- **Security Measures**: API key protection, CORS configuration, and input validation
+- **Monitoring & Logging**: Performance monitoring and detailed logging for debugging
 
 ## 🏗️ Architecture
 
@@ -258,6 +276,33 @@ The application provides a seamless three-step experience with rich interactivit
 - **Error Resilience**: Comprehensive error handling with retry mechanisms
 - **Offline Graceful**: Fallback content when APIs are unavailable
 - **Accessibility**: Full keyboard navigation and screen reader support
+
+## 🆕 Recent Improvements
+
+### Multi-Day Scheduling System (Latest)
+- **Smart Day Transitions**: Automatically splits large itineraries across multiple days
+- **Daily Time Limits**: Respects 9am-8pm daily schedule constraints
+- **Bold Day Headers**: Clear **Day 1**, **Day 2** formatting for easy reading
+- **No Timing Conflicts**: Ensures no overlapping activities or impossible schedules
+- **Proper Duration Preservation**: Respects AI-recommended visit times (museums: 2-3 hours, parks: 1-2 hours)
+
+### Enhanced Duration Intelligence
+- **AI Duration Recommendations**: Preserves Bedrock Agent's smart duration suggestions
+- **Category-Based Timing**: Different visit times based on attraction type
+- **Flexible Parsing**: Handles various duration formats ("2-3 hours", "45 minutes", "1.5 hours")
+- **Fallback Logic**: Uses sensible defaults when AI recommendations aren't available
+
+### Route Optimization Improvements
+- **Google Maps Integration**: Real-time route optimization with TSP algorithms
+- **Multiple Travel Modes**: Walking, driving, and public transit support
+- **Travel Time Accuracy**: Precise travel time calculations between locations
+- **Navigation Links**: Direct integration with Google Maps for turn-by-turn directions
+
+### Performance & Reliability
+- **Comprehensive Error Handling**: Graceful fallbacks for all API failures
+- **Request Optimization**: Deduplication and caching for improved performance
+- **100+ Test Coverage**: Extensive testing including multi-day scenarios
+- **Production Monitoring**: Detailed logging and performance tracking
 
 ## 🚀 Deployment
 

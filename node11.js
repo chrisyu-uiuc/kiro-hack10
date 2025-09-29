@@ -3,7 +3,7 @@
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
 // --- IMPORTANT: Set your Google API Key here ---
-const API_KEY = "AIzaSyAYdP_ulJiLFRzszz2sIf7aymq1bdYPp3w";
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
 
 if (!API_KEY || API_KEY === "YOUR_GOOGLE_API_KEY") {
     console.error("Please set your GOOGLE_API_KEY in the script and re-run.");

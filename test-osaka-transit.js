@@ -1,7 +1,7 @@
 // Simple test for Osaka transit routes
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
-const API_KEY = "AIzaSyAYdP_ulJiLFRzszz2sIf7aymq1bdYPp3w";
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
 
 async function testTransitRoute(origin, destination) {
     console.log(`\n🚇 Testing transit route: ${origin} → ${destination}`);
