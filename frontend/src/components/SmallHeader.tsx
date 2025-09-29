@@ -18,7 +18,7 @@ const SmallHeader: React.FC = () => {
   return (
     <div className="small-header">
       <div className="breadcrumb">
-        <span className="brand-name">Your AI Trip Planner</span>
+        <span className="brand-name">AI Trip Planner</span>
         <span className="separator">•</span>
         <span className="page-title">{getPageTitle()}</span>
       </div>

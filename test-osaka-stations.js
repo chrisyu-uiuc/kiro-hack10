@@ -1,11 +1,11 @@
 // Test specific Osaka station-to-station transit routes
-const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
+const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 
-const API_KEY = "AIzaSyAYdP_ulJiLFRzszz2sIf7aymq1bdYPp3w";
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY || "YOUR_GOOGLE_API_KEY_HERE";
 
 async function testTransitRoute(origin, destination) {
     console.log(`\n🚇 Testing: ${origin} → ${destination}`);
-    
+
     const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
     const body = {
         origin: { address: origin },
@@ -26,7 +26,7 @@ async function testTransitRoute(origin, destination) {
         });
 
         const data = await res.json();
-        
+
         if (data.routes && data.routes.length > 0) {
             const route = data.routes[0];
             console.log(`✅ SUCCESS: ${route.duration}, ${route.distanceMeters}m`);
@@ -46,38 +46,38 @@ async function testTransitRoute(origin, destination) {
 
 (async function main() {
     console.log("🗾 Testing Osaka Station-to-Station Transit Routes\n");
-    
+
     // Test major station connections
     const stationRoutes = [
         // Major JR stations
         ["Osaka Station", "Tennoji Station"],
         ["Osaka Station", "Namba Station"],
         ["Tennoji Station", "Namba Station"],
-        
+
         // Metro stations
         ["Umeda Station", "Namba Station"],
         ["Umeda Station", "Tennoji Station"],
-        
+
         // Mixed with attractions
         ["Osaka Station", "Osaka Castle Park"],
         ["Namba Station", "Dotonbori"],
         ["Tennoji Station", "Tsutenkaku"],
-        
+
         // International comparison (should work)
         ["Tokyo Station", "Shibuya Station"],
         ["Shinjuku Station", "Tokyo Station"],
     ];
-    
+
     let successCount = 0;
-    
+
     for (const [origin, destination] of stationRoutes) {
         const success = await testTransitRoute(origin, destination);
         if (success) successCount++;
         await new Promise(resolve => setTimeout(resolve, 300));
     }
-    
+
     console.log(`\n📊 Results: ${successCount}/${stationRoutes.length} routes successful`);
-    
+
     if (successCount === 0) {
         console.log("\n🔍 Transit API may not have coverage for Osaka region");
         console.log("   This explains why our fallback to walking mode is essential");

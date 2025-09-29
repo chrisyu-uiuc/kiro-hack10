@@ -19,7 +19,7 @@ function App() {
       <div className="container">
         {isHomePage ? (
           <div className="main-header">
-            <h1>✈️ Your AI Trip Planner</h1>
+            <h1>✈️ AI Trip Planner</h1>
             <p>Discover. Plan. Explore. Your AI-powered travel companion.</p>
           </div>
         ) : (

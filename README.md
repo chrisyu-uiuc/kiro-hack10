@@ -1,4 +1,4 @@
-# Your AI Trip Planner
+# AI Trip Planner
 
 A production-ready web application that creates personalized travel itineraries using AWS Bedrock Agent and Google Places API. The application follows a three-step user flow: city input, spot selection with detailed information popups, and comprehensive itinerary generation.
 
