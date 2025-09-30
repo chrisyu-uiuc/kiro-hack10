@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2023-11-20
 
-### Added - Google Maps Itinerary Optimization
+### Added - Enhanced Itinerary Service & Google Maps Optimization
 
 #### New API Endpoints
 - **POST /api/itinerary/optimize** - Generate optimized itinerary with Google Maps integration
@@ -30,10 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GET /api/monitoring/health** - Enhanced health check with metrics
 
 #### New Services
-- **EnhancedItineraryService** - Core optimization logic with fallback support
-- **GoogleMapsService** - Google Maps API integration with caching
-- **RouteOptimizationMonitor** - Performance monitoring for route optimization
-- **GeocodingCache** - Intelligent caching for geocoding results
+- **EnhancedItineraryService** - Core optimization engine combining Bedrock Agent insights with Google Maps routing
+- **GoogleMapsService** - Google Maps API integration with intelligent caching and TSP algorithms
+- **RouteOptimizationMonitor** - Performance monitoring for route optimization with real-time metrics
+- **GeocodingCache** - Intelligent caching system with 24-hour TTL and automatic cleanup
 
 #### Enhanced Error Handling
 - Specific error codes for different failure scenarios
@@ -62,10 +62,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Performance Guide**: Optimization and monitoring best practices
 
 ### Technical Improvements
-- **TypeScript**: Enhanced type definitions for all new endpoints
-- **Testing**: Comprehensive test coverage for all new features
-- **Error Boundaries**: Robust error handling throughout the system
-- **Monitoring**: Real-time performance and health monitoring
+- **Enhanced Architecture**: Sophisticated service integration with intelligent fallback systems
+- **TypeScript**: Enhanced type definitions for all new endpoints and services
+- **Testing**: Comprehensive test coverage including multi-day scenarios and error handling
+- **Error Boundaries**: Robust error handling with specific error codes and recovery strategies
+- **Monitoring**: Real-time performance and health monitoring with detailed metrics
+- **Caching Strategy**: Multi-layer caching system for optimal performance and cost reduction
 
 ## [1.1.0] - 2023-11-15
 
@@ -146,26 +148,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### New Environment Variables
 Add these to your `.env` file:
 ```bash
-# Google Maps API Configuration
+# Google Maps API Configuration (Required)
 GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 
-# Performance Settings (optional)
-GEOCODING_CACHE_TTL=86400
-ROUTE_CACHE_TTL=3600
-MAX_CACHE_ENTRIES=10000
+# Performance Settings (Optional but Recommended)
+GEOCODING_CACHE_TTL=86400                    # 24 hours
+ROUTE_CACHE_TTL=3600                         # 1 hour
+MAX_CACHE_ENTRIES=10000                      # Maximum cache entries
 
-# Rate Limiting (optional)
+# Rate Limiting (Optional)
 GOOGLE_MAPS_REQUESTS_PER_SECOND=10
 GOOGLE_MAPS_REQUESTS_PER_DAY=25000
+
+# Optimization Settings (Optional)
+MAX_SPOTS_FOR_FULL_OPTIMIZATION=8           # Threshold for fast optimization
+OPTIMIZATION_TIMEOUT=45000                   # 45 seconds
+FALLBACK_TIMEOUT=30000                       # 30 seconds
 ```
 
+#### Google Maps Platform Setup
+1. Enable required APIs in Google Cloud Console:
+   - Geocoding API (required for EnhancedItineraryService)
+   - Distance Matrix API (required for route optimization)
+   - Routes API (optional but recommended)
+   - Places API (already required for existing features)
+
+2. Configure API key restrictions for security
+3. Set up usage quotas to control costs
+
 #### API Changes
-- New optimization endpoint: `POST /api/itinerary/optimize`
-- Enhanced error responses with specific error codes
-- New monitoring endpoints for performance tracking
+- **New Primary Endpoint**: `POST /api/itinerary/optimize` - Enhanced optimization with Google Maps integration
+- **Enhanced Error Responses**: Specific error codes for different failure scenarios
+- **New Monitoring Endpoints**: Comprehensive performance tracking and health monitoring
+- **Fallback Support**: Graceful degradation when APIs are unavailable
+
+#### Service Architecture Changes
+- **EnhancedItineraryService**: New core service combining Bedrock Agent with Google Maps
+- **Intelligent Caching**: Automatic caching reduces API usage and improves performance
+- **Multi-Day Support**: Automatic day splitting with proper time constraints
+- **Performance Monitoring**: Real-time metrics and health monitoring
 
 #### Breaking Changes
-None - all changes are additive and backward compatible.
+None - all changes are additive and backward compatible. Existing endpoints continue to work as before.
 
 ### Upgrading to 1.1.0
 

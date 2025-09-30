@@ -1,374 +1,107 @@
 # AI Trip Planner
 
-A production-ready web application that creates personalized travel itineraries using AWS Bedrock Agent and Google Places API. The application follows a three-step user flow: city input, spot selection with detailed information popups, and comprehensive itinerary generation.
+Create personalized travel itineraries using AI and Google Maps. Simple 3-step process: enter a city, select spots, get an optimized itinerary.
 
-## ✨ Features
+## Features
 
-### 🤖 AI-Powered Travel Planning
-- **AWS Bedrock Agent Integration**: Nova Pro 1.0 model for intelligent travel suggestions
-- **Smart Duration Recommendations**: AI determines optimal visit times (museums: 2-3 hours, parks: 1-2 hours, viewpoints: 45 minutes)
-- **Personalized Itineraries**: Context-aware recommendations based on travel preferences
+- **AI-Powered**: Uses AWS Bedrock Agent for smart travel recommendations
+- **Route Optimization**: Google Maps integration for optimal routes and real travel times
+- **Rich Spot Details**: Photos, reviews, and ratings from Google Places
+- **Multi-Day Support**: Automatically splits large itineraries across days
+- **Mobile-Friendly**: Responsive design with touch gestures
 
-### 🗺️ Advanced Route Optimization
-- **Google Maps Integration**: Real-time route optimization with multiple travel modes (walking, driving, transit)
-- **Multi-Day Scheduling**: Automatic day splitting with 9am-8pm daily limits and proper day transitions
-- **Smart Timing**: Sequential scheduling with travel time calculations and no overlapping activities
-- **Meal Break Integration**: Intelligent lunch and dinner break placement
+## Tech Stack
 
-### 📍 Comprehensive Spot Information
-- **Google Places API Integration**: Photos, reviews, ratings, and practical information
-- **Interactive Photo Galleries**: Optimized image loading with lazy loading and caching
-- **Real User Reviews**: Comprehensive reviews and ratings from Google Places
-- **Detailed Information Popups**: Rich spot details with error boundaries
+- **Frontend**: React 18 + TypeScript + Vite
+- **Backend**: Node.js + Express + TypeScript
+- **AI**: AWS Bedrock Agent (Nova Pro 1.0)
+- **Maps**: Google Maps Platform APIs
+- **Testing**: Vitest with 100+ tests
 
-### 🎯 User Experience
-- **Multi-Step Flow**: Intuitive 3-step process from city selection to complete itinerary
-- **Session Management**: Maintains state across the user journey with performance caching
-- **Mobile-Optimized**: Touch-friendly interface with swipe gestures and responsive design
-- **Advanced Error Handling**: Comprehensive error boundaries with retry mechanisms and fallback content
-
-### ⚡ Performance & Production Ready
-- **Performance Optimized**: Image optimization, request deduplication, and session caching
-- **100+ Comprehensive Tests**: Full test coverage with unit, integration, and error handling tests
-- **Security Measures**: API key protection, CORS configuration, and input validation
-- **Monitoring & Logging**: Performance monitoring and detailed logging for debugging
-
-## 🏗️ Architecture
-
-This is a monorepo with npm workspaces containing separate frontend and backend applications.
-
-```
-travel-itinerary-generator/
-├── frontend/                 # React 18 + TypeScript + Vite
-│   ├── src/
-│   │   ├── components/      # 10+ React components
-│   │   │   ├── CityInput.tsx           # Step 1: City input form
-│   │   │   ├── SpotSelection.tsx       # Step 2: Spot selection interface
-│   │   │   ├── SpotInfoPopup.tsx       # Detailed spot information modal
-│   │   │   ├── PhotoGallery.tsx        # Interactive photo gallery
-│   │   │   ├── ReviewsSection.tsx      # Google Places reviews display
-│   │   │   ├── OptimizedImage.tsx      # Performance-optimized image component
-│   │   │   ├── ItineraryDisplay.tsx    # Step 3: Final itinerary
-│   │   │   ├── LoadingSpinner.tsx      # Loading states
-│   │   │   ├── ErrorBoundary.tsx       # Global error handling
-│   │   │   └── SpotInfoErrorBoundary.tsx # Spot-specific error handling
-│   │   ├── hooks/           # Custom React hooks (useAppState)
-│   │   ├── services/        # API client with caching and deduplication
-│   │   ├── utils/           # Performance, caching, and error handling utilities
-│   │   └── types/           # TypeScript definitions with Google Places types
-│   └── dist/                # Build output
-├── backend/                  # Node.js + Express + TypeScript
-│   ├── src/
-│   │   ├── routes/          # 6 API endpoints (city + spot details)
-│   │   ├── services/        # AWS Bedrock + Google Places integration
-│   │   │   ├── BedrockAgentService.ts  # AWS Bedrock Agent client
-│   │   │   └── GooglePlacesService.ts  # Google Places API client
-│   │   ├── middleware/      # Security, CORS, logging, sessions
-│   │   └── __tests__/       # 100+ comprehensive tests
-│   └── dist/                # Build output
-├── deployment/              # EC2 deployment scripts and guides
-└── package.json             # Root workspace configuration
-```
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm
+- Node.js 18+
 - AWS account with Bedrock Agent access
+- Google Cloud Platform account
 
-### Installation & Setup
+### Setup
 
-1. **Install all dependencies:**
+1. **Install dependencies:**
    ```bash
    npm run install:all
    ```
 
-2. **Configure environment variables:**
+2. **Configure environment:**
    ```bash
-   # Backend configuration
    cd backend
    cp .env.example .env
-   # Edit .env with your AWS credentials and Google Places API key
-   # AWS Bedrock Agent Core Configuration
-   # AWS_REGION=us-east-1
-   # AWS_ACCESS_KEY_ID=
-   # AWS_SECRET_ACCESS_KEY=
-
-   # Bedrock Agent Configuration
-   # BEDROCK_AGENT_ID=
-   # BEDROCK_AGENT_ALIAS_ID=
-
-   # Google Places API Configuration
-   # GOOGLE_PLACES_API_KEY=
+   ```
    
-   # Google Maps API Configuration (for route optimization)
-   # GOOGLE_MAPS_API_KEY=
-
-   # Server Configuration
-   # PORT=3001
-   # NODE_ENV=development
-
-   # CORS Configuration
-   # FRONTEND_URL=http://localhost:3000  # or http://yourip:3000 for network access
-
-   # Frontend configuration (optional)
-   cd ../frontend
-   cp .env.example .env
-   # Defaults work for development
-
-   # API Configuration - Use network IP for cross-device access
-   # VITE_API_URL=http://localhost:3001  # or http://yourip:3001 for network access
-   # Development Configuration
-   # VITE_NODE_ENV=development
+   Edit `.env` with your credentials:
+   ```bash
+   # AWS Configuration
+   AWS_REGION=us-east-1
+   AWS_ACCESS_KEY_ID=your_access_key
+   AWS_SECRET_ACCESS_KEY=your_secret_key
+   
+   # Bedrock Agent
+   BEDROCK_AGENT_ID=your_agent_id
+   BEDROCK_AGENT_ALIAS_ID=your_alias_id
+   
+   # Google APIs
+   GOOGLE_PLACES_API_KEY=your_places_key
+   GOOGLE_MAPS_API_KEY=your_maps_key
+   
+   # Server
+   PORT=3001
+   FRONTEND_URL=http://localhost:3000
    ```
 
-3. **Start development servers:**
+3. **Start development:**
    ```bash
-   # Start both servers concurrently
    npm run dev
-   
-   # Or individually:
-   npm run dev:backend   # http://localhost:3001
-   npm run dev:frontend  # http://localhost:3000
    ```
 
-4. **Open your browser:**
-   Navigate to `http://localhost:3000` to start creating itineraries!
-   
-   **Note**: For network access from other devices, replace `localhost` with your machine's IP address in the environment files.
+4. **Open browser:**
+   Navigate to `http://localhost:3000`
 
-## 📋 Available Scripts
+## Scripts
 
-### Setup
 ```bash
-npm run install:all          # Install all dependencies
+npm run dev          # Start both frontend and backend
+npm run build        # Build both projects
+npm run test         # Run tests
+npm run lint         # Lint code
 ```
 
-### Development
-```bash
-npm run dev                  # Start both frontend and backend
-npm run dev:frontend         # Frontend only (port 3000)
-npm run dev:backend          # Backend only (port 3001)
-```
+## API Setup
 
-### Building
-```bash
-npm run build               # Build both projects
-npm run build:frontend      # Build frontend only
-npm run build:backend       # Build backend only
-```
+### AWS Bedrock Agent
+1. Create a Bedrock Agent in AWS Console
+2. Configure with travel planning prompt
+3. Get your Agent ID and Alias ID
 
-### Quality Assurance
-```bash
-npm run lint               # Lint both projects
-npm run type-check         # TypeScript checking
-cd backend && npm test     # Run backend tests (100+ tests)
-```
+### Google Maps Platform
+1. Enable these APIs in Google Cloud Console:
+   - Places API
+   - Geocoding API
+   - Distance Matrix API
+2. Create API keys with appropriate restrictions
+3. Add keys to your `.env` file
 
-## ⚙️ Technology Stack
+## How It Works
 
-### Frontend
-- **Framework**: React 18 with TypeScript
-- **Build Tool**: Vite 5.0 with hot reload
-- **Routing**: React Router DOM v6
-- **HTTP Client**: Axios
-- **Styling**: Responsive CSS design
+1. **City Input**: Enter a destination city
+2. **Spot Selection**: Choose from AI-generated recommendations with photos and reviews
+3. **Itinerary**: Get an optimized travel plan with routes and timing
 
-### Backend
-- **Runtime**: Node.js with TypeScript (ES Modules)
-- **Framework**: Express.js
-- **AWS Integration**: @aws-sdk/client-bedrock-agent-runtime
-- **Google Places Integration**: Google Places API with comprehensive error handling
-- **Security**: Helmet, CORS, express-validator
-- **Session Management**: In-memory storage with UUID
-- **Caching**: Multi-layer caching (memory + session storage)
-- **Testing**: Vitest with 100+ comprehensive tests
+## Documentation
 
-### Development Tools
-- **TypeScript**: Strict mode with path mapping (@/* aliases)
-- **ESLint**: Standard rules + TypeScript recommended
-- **Package Manager**: npm with workspaces
-- **Concurrency**: concurrently for running both servers
+- **[Enhanced Itinerary Service](ENHANCED_ITINERARY_SERVICE.md)** - Core optimization engine details
+- **[API Documentation](backend/docs/api-optimization.md)** - Complete API reference
+- **[Deployment Guide](deployment/ec2-deployment.md)** - Production deployment instructions
 
-## 🔧 API Configuration
+## License
 
-### AWS Bedrock Agent Setup
-The application requires the following AWS Bedrock Agent configuration:
-- **Region**: us-east-1 (or your preferred region)
-- **Bedrock Agent ID**: Your agent ID
-- **Bedrock Agent Alias ID**: Your agent alias ID
-- **Model**: Nova Pro 1.0
-
-#### AWS Bedrock Agent Prompt
-The agent uses this prompt configuration:
-```
-You are a travel planning assistant. You help users:
-1. Validate city names and provide location information
-2. Discover tourist attractions and points of interest
-3. Validate custom locations within cities
-4. Optimize travel routes for efficiency
-5. Provide travel recommendations and tips
-
-Always provide structured, helpful responses with specific details about locations, timing, and travel advice.
-```
-
-#### Required AWS Permissions
-Ensure your AWS credentials have the necessary permissions:
-- `bedrock:InvokeAgent`
-- Access to the specified Bedrock Agent
-
-### Google Maps Platform Setup
-The application integrates with Google Maps Platform for detailed spot information and route optimization:
-
-1. **Enable APIs**: Enable the following APIs in Google Cloud Console:
-   - **Places API** (for spot details, photos, reviews)
-   - **Geocoding API** (for converting addresses to coordinates)
-   - **Distance Matrix API** (for calculating travel times)
-   - **Routes API** (for advanced routing - optional but recommended)
-
-2. **Create API Keys**: Generate API keys with appropriate restrictions:
-   - **Google Places API Key**: For frontend spot details
-   - **Google Maps API Key**: For backend routing and optimization
-
-3. **Configure Environment**: Add your API keys to the backend `.env` file:
-   ```
-   GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
-   GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
-   ```
-
-4. **Validate Configuration**: Test your API setup:
-   ```bash
-   cd backend
-   npm run validate-google-maps
-   ```
-
-#### Google Maps Platform Features
-- **Place Details**: Photos, reviews, ratings, opening hours
-- **Route Optimization**: AI-powered route optimization using TSP algorithms
-- **Real Travel Times**: Accurate travel time calculations between locations
-- **Multiple Travel Modes**: Walking, driving, and public transit support
-- **Navigation Integration**: Direct links to Google Maps navigation
-- **Comprehensive Error Handling**: Graceful fallbacks for API failures
-
-> **📋 Detailed Setup Guide**: See [deployment/environment-setup.md](deployment/environment-setup.md) for complete Google Maps Platform setup instructions, API key configuration, and cost optimization tips.
-
-### Security Notes
-⚠️ **Never commit API keys to version control**. Always use environment variables and ensure your `.env` files are in `.gitignore`.
-
-⚠️ **Restrict API Keys**: Always configure API key restrictions in production to prevent unauthorized usage.
-
-## 🎯 User Flow
-
-The application provides a seamless three-step experience with rich interactivity:
-
-1. **City Input**: Users enter and verify a destination city using AWS Bedrock Agent
-2. **Spot Selection**: Choose from 10-20 AI-generated recommendations with detailed information:
-   - **Information Button**: Click to view comprehensive spot details
-   - **Photo Galleries**: Browse high-quality images with optimized loading
-   - **Reviews & Ratings**: Read authentic Google Places reviews
-   - **Practical Information**: Opening hours, address, website, and directions
-   - **Mobile-Optimized**: Touch-friendly interface with swipe gestures
-3. **Itinerary Generation**: Receive detailed travel plans with timing and transportation
-
-### Enhanced Features
-- **Performance Optimized**: Image caching, lazy loading, and request deduplication
-- **Error Resilience**: Comprehensive error handling with retry mechanisms
-- **Offline Graceful**: Fallback content when APIs are unavailable
-- **Accessibility**: Full keyboard navigation and screen reader support
-
-## 🆕 Recent Improvements
-
-### Multi-Day Scheduling System (Latest)
-- **Smart Day Transitions**: Automatically splits large itineraries across multiple days
-- **Daily Time Limits**: Respects 9am-8pm daily schedule constraints
-- **Bold Day Headers**: Clear **Day 1**, **Day 2** formatting for easy reading
-- **No Timing Conflicts**: Ensures no overlapping activities or impossible schedules
-- **Proper Duration Preservation**: Respects AI-recommended visit times (museums: 2-3 hours, parks: 1-2 hours)
-
-### Enhanced Duration Intelligence
-- **AI Duration Recommendations**: Preserves Bedrock Agent's smart duration suggestions
-- **Category-Based Timing**: Different visit times based on attraction type
-- **Flexible Parsing**: Handles various duration formats ("2-3 hours", "45 minutes", "1.5 hours")
-- **Fallback Logic**: Uses sensible defaults when AI recommendations aren't available
-
-### Route Optimization Improvements
-- **Google Maps Integration**: Real-time route optimization with TSP algorithms
-- **Multiple Travel Modes**: Walking, driving, and public transit support
-- **Travel Time Accuracy**: Precise travel time calculations between locations
-- **Navigation Links**: Direct integration with Google Maps for turn-by-turn directions
-
-### Performance & Reliability
-- **Comprehensive Error Handling**: Graceful fallbacks for all API failures
-- **Request Optimization**: Deduplication and caching for improved performance
-- **100+ Test Coverage**: Extensive testing including multi-day scenarios
-- **Production Monitoring**: Detailed logging and performance tracking
-
-## 🚀 Deployment
-
-For production deployment on EC2, see the comprehensive guides in the `deployment/` directory:
-- `ec2-quick-start.md` - Quick deployment guide
-- `ec2-deployment.md` - Detailed deployment instructions
-- `ec2-setup.sh` - Automated setup script
-
-## 🧪 Testing
-
-The application includes 100+ comprehensive tests covering:
-
-### Backend Tests
-- **API Endpoints**: All city and spot routes with validation
-- **AWS Bedrock Agent**: Integration testing with mocked responses
-- **Google Places API**: Service integration with error scenarios
-- **Error Handling**: Comprehensive error boundary testing
-- **Session Management**: State persistence and cleanup
-- **Security Middleware**: CORS, validation, and authentication
-
-### Frontend Tests
-- **Component Testing**: All major components with React Testing Library
-- **Error Boundaries**: Error handling and recovery mechanisms
-- **Mobile Responsiveness**: Touch interactions and responsive design
-- **Performance Utilities**: Caching, debouncing, and optimization
-- **API Integration**: Service layer with mocking and error scenarios
-
-Run tests with:
-```bash
-cd backend && npm test     # Backend tests
-cd frontend && npm test    # Frontend tests (when available)
-```
-
-### Test Coverage
-- **API Routes**: 100% endpoint coverage
-- **Error Scenarios**: Comprehensive failure case testing
-- **Mobile Features**: Touch gestures and responsive behavior
-- **Performance**: Caching and optimization verification
-
-## 📁 Path Mapping
-
-Both projects use TypeScript path mapping for clean imports:
-- `@/*` - src directory root
-- `@/components/*` - components directory (frontend)
-- `@/services/*` - services directory
-- `@/types/*` - types directory
-- `@/middleware/*` - middleware directory (backend)
-- `@/routes/*` - routes directory (backend)
-
-## 🤝 Contributing
-
-1. Follow the established naming conventions (camelCase files, PascalCase components)
-2. Maintain TypeScript strict mode compliance
-3. Add tests for new functionality
-4. Use the provided ESLint configuration
-5. Keep related files organized by feature/domain
-6. Review security guidelines before submitting changes
-
-## 📚 Additional Documentation
-
-- **[Spot Information Feature Guide](SPOT_INFORMATION_FEATURE.md)** - Comprehensive documentation for the spot information popup feature
-- **[Project Completion Summary](PROJECT_COMPLETION_SUMMARY.md)** - Complete overview of implemented features and achievements
-- **[Deployment Guides](deployment/)** - Production deployment instructions for various platforms
-- **[Google Maps Optimization API](backend/docs/api-optimization.md)** - Complete API documentation for itinerary optimization endpoints
-- **[API Quick Reference](backend/docs/api-quick-reference.md)** - Quick reference guide for developers
-
-## 📄 License
-
-This project is licensed under the MIT License.
+MIT License

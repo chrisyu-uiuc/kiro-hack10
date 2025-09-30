@@ -4,17 +4,27 @@ Backend API server for the Travel Itinerary Generator application.
 
 ## Features Implemented
 
-### Task 3: Backend API Server Foundation ✅
+### Core Backend API Server ✅
 
-- **Express Server Setup**: Configured with TypeScript support
-- **CORS Middleware**: Configured for frontend communication
+- **Express Server Setup**: Configured with TypeScript support and ES modules
+- **CORS Middleware**: Configured for frontend communication with flexible origin handling
 - **Security Headers**: Implemented using Helmet middleware
 - **JSON Body Parsing**: Supports JSON payloads up to 10MB
 - **Session Storage**: In-memory session management with automatic cleanup
 - **Error Handling**: Comprehensive error handling with structured responses
 - **Request Logging**: Detailed request/response logging with emojis
-- **Health Check**: `/health` endpoint for monitoring
+- **Health Check**: Enhanced `/health` endpoint with performance metrics
 - **Graceful Shutdown**: Proper SIGTERM/SIGINT handling
+
+### Google Maps Integration ✅
+
+- **Enhanced Itinerary Service**: Combines AWS Bedrock Agent with Google Maps optimization
+- **Route Optimization**: TSP-based algorithms with Google Maps API integration
+- **Multi-Modal Travel**: Support for walking, driving, and transit modes
+- **Intelligent Caching**: Geocoding cache with 24-hour TTL and automatic cleanup
+- **Performance Monitoring**: Real-time metrics and comprehensive monitoring endpoints
+- **Fallback System**: Graceful degradation when APIs are unavailable
+- **Error Handling**: Specific error codes for different failure scenarios
 
 ## Project Structure
 
@@ -22,20 +32,41 @@ Backend API server for the Travel Itinerary Generator application.
 backend/
 ├── src/
 │   ├── config/
-│   │   └── index.ts          # Environment configuration
+│   │   └── index.ts                    # Environment configuration
 │   ├── middleware/
-│   │   ├── errorHandler.ts   # Error handling middleware
-│   │   ├── requestLogger.ts  # Request logging middleware
-│   │   └── sessionStorage.ts # Session management
+│   │   ├── errorHandler.ts             # Error handling middleware
+│   │   ├── requestLogger.ts            # Request logging middleware
+│   │   └── sessionStorage.ts           # Session management
+│   ├── routes/
+│   │   ├── cityRoutes.ts               # City verification endpoints
+│   │   ├── spotRoutes.ts               # Spot details and selection endpoints
+│   │   ├── enhancedItineraryRoutes.ts  # Google Maps optimization endpoints
+│   │   └── monitoringRoutes.ts         # Performance monitoring endpoints
 │   ├── services/
-│   │   └── BedrockAgentService.ts # AWS Bedrock integration
+│   │   ├── BedrockAgentService.ts      # AWS Bedrock integration
+│   │   ├── GooglePlacesService.ts      # Google Places API integration
+│   │   ├── GoogleMapsService.ts        # Google Maps API integration
+│   │   ├── EnhancedItineraryService.ts # Combined optimization service
+│   │   ├── GeocodingCache.ts           # Intelligent geocoding cache
+│   │   └── RouteOptimizationMonitor.ts # Performance monitoring
+│   ├── utils/
+│   │   └── googleMapsLogger.ts         # Google Maps API logging utility
 │   ├── types/
-│   │   └── express.d.ts      # TypeScript declarations
-│   ├── __tests__/
-│   │   └── server.test.ts    # Server foundation tests
-│   └── server.ts             # Main server file
+│   │   ├── express.d.ts                # TypeScript declarations
+│   │   └── api.ts                      # API type definitions
+│   ├── __tests__/                      # Comprehensive test suite (100+ tests)
+│   │   ├── services/                   # Service layer tests
+│   │   ├── routes/                     # API endpoint tests
+│   │   └── utils/                      # Utility tests
+│   └── server.ts                       # Main server file
+├── docs/
+│   ├── api-optimization.md             # Complete API documentation
+│   └── api-quick-reference.md          # Quick reference guide
+├── scripts/
+│   └── validate-google-maps-config.js  # Configuration validation
 ├── package.json
 ├── tsconfig.json
+├── CHANGELOG.md
 └── .env.example
 ```
 
@@ -52,6 +83,21 @@ AWS_SECRET_ACCESS_KEY=your_secret_key_here
 # Bedrock Agent Configuration
 BEDROCK_AGENT_ID=BTATPBP5VG
 BEDROCK_AGENT_ALIAS_ID=JFTVDFJYFF
+
+# Google Places API Configuration
+GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
+
+# Google Maps API Configuration (for route optimization)
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# Performance Settings (optional)
+GEOCODING_CACHE_TTL=86400
+ROUTE_CACHE_TTL=3600
+MAX_CACHE_ENTRIES=10000
+
+# Rate Limiting (optional)
+GOOGLE_MAPS_REQUESTS_PER_SECOND=10
+GOOGLE_MAPS_REQUESTS_PER_DAY=25000
 
 # Server Configuration
 PORT=3001

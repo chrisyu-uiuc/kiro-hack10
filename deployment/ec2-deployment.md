@@ -49,10 +49,10 @@ gcloud services enable places-backend.googleapis.com
 ```
 
 Or enable via Console:
-- **Geocoding API**: For converting addresses to coordinates
-- **Distance Matrix API**: For calculating travel times between locations
-- **Routes API**: For advanced routing and transit information
-- **Places API**: For location details, photos, and reviews
+- **Geocoding API**: For converting addresses to coordinates (required for EnhancedItineraryService)
+- **Distance Matrix API**: For calculating travel times between locations (required for route optimization)
+- **Routes API**: For advanced routing and transit information (optional but recommended)
+- **Places API**: For location details, photos, and reviews (required for spot information)
 
 ### 1.3 Create API Keys
 1. Go to **APIs & Services > Credentials**
@@ -71,11 +71,13 @@ Or enable via Console:
 - Restrict to: Geocoding API, Distance Matrix API, Routes API
 
 ### 1.5 Set Usage Quotas (Optional)
-Set daily quotas to control costs:
-- **Geocoding**: 1,000 requests/day
-- **Distance Matrix**: 1,000 requests/day
-- **Routes**: 500 requests/day
-- **Places**: 1,000 requests/day
+Set daily quotas to control costs (recommended for production):
+- **Geocoding**: 1,000 requests/day (cached for 24 hours to reduce usage)
+- **Distance Matrix**: 1,000 requests/day (used for route optimization)
+- **Routes**: 500 requests/day (optional, fallback to Distance Matrix)
+- **Places**: 1,000 requests/day (cached for 6 hours)
+
+**Note**: The EnhancedItineraryService includes intelligent caching to minimize API usage and costs.
 
 ## Step 2: Launch EC2 Instance
 
@@ -174,6 +176,11 @@ BEDROCK_AGENT_ID=BTATPBP5VG
 BEDROCK_AGENT_ALIAS_ID=JFTVDFJYFF
 GOOGLE_PLACES_API_KEY=your_google_places_api_key
 GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+GEOCODING_CACHE_TTL=86400
+ROUTE_CACHE_TTL=3600
+MAX_CACHE_ENTRIES=10000
+GOOGLE_MAPS_REQUESTS_PER_SECOND=10
+GOOGLE_MAPS_REQUESTS_PER_DAY=25000
 FRONTEND_URL=https://your-domain.com
 EOF
 
